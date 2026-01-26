@@ -5,6 +5,7 @@ from typing import Any
 
 from mcp.types import TextContent
 
+from .config import DEFAULT_CUSTOMER_DISCOUNT
 from .formatters import (
     format_cost_estimate_response,
     format_customer_discount_response,
@@ -27,33 +28,93 @@ class ToolHandlers:
         self._pricing_service = pricing_service
         self._sku_service = sku_service
 
+    def _resolve_discount(self, arguments: dict[str, Any]) -> tuple[float, bool, bool]:
+        """Resolve discount parameters.
+
+        Returns:
+            Tuple of (discount_percentage, discount_specified, used_default_discount)
+        """
+        show_with_discount = arguments.pop("show_with_discount", False)
+        discount_specified = "discount_percentage" in arguments
+
+        if discount_specified:
+            # User explicitly provided a discount percentage
+            discount_percentage = arguments["discount_percentage"]
+            used_default_discount = False
+        elif show_with_discount:
+            # User requested discount but didn't specify - use default
+            discount_percentage = DEFAULT_CUSTOMER_DISCOUNT
+            used_default_discount = True
+            arguments["discount_percentage"] = discount_percentage
+        else:
+            # No discount requested - default to 0%
+            discount_percentage = 0.0
+            used_default_discount = False
+            arguments["discount_percentage"] = 0.0
+
+        return discount_percentage, discount_specified, used_default_discount
+
     async def handle_price_search(self, arguments: dict[str, Any]) -> list[TextContent]:
         """Handle azure_price_search tool calls."""
-        customer_discount = await self._pricing_service.get_customer_discount()
-        discount_percentage = customer_discount["discount_percentage"]
-
-        if "discount_percentage" not in arguments:
-            arguments["discount_percentage"] = discount_percentage
+        discount_percentage, discount_specified, used_default_discount = self._resolve_discount(arguments)
 
         result = await self._pricing_service.search_prices(**arguments)
+
+        # Add discount metadata for formatting
+        result["_discount_metadata"] = {
+            "discount_specified": discount_specified,
+            "used_default_discount": used_default_discount,
+            "discount_percentage": discount_percentage,
+        }
+
         response_text = format_price_search_response(result)
         return [TextContent(type="text", text=response_text)]
 
     async def handle_price_compare(self, arguments: dict[str, Any]) -> list[TextContent]:
         """Handle azure_price_compare tool calls."""
+        discount_percentage, discount_specified, used_default_discount = self._resolve_discount(arguments)
+
         result = await self._pricing_service.compare_prices(**arguments)
+
+        # Add discount metadata for formatting
+        result["_discount_metadata"] = {
+            "discount_specified": discount_specified,
+            "used_default_discount": used_default_discount,
+            "discount_percentage": discount_percentage,
+        }
+
         response_text = format_price_compare_response(result)
         return [TextContent(type="text", text=response_text)]
 
     async def handle_region_recommend(self, arguments: dict[str, Any]) -> list[TextContent]:
         """Handle azure_region_recommend tool calls."""
+        discount_percentage, discount_specified, used_default_discount = self._resolve_discount(arguments)
+
         result = await self._pricing_service.recommend_regions(**arguments)
+
+        # Add discount metadata for formatting
+        result["_discount_metadata"] = {
+            "discount_specified": discount_specified,
+            "used_default_discount": used_default_discount,
+            "discount_percentage": discount_percentage,
+        }
+
         response_text = format_region_recommend_response(result)
         return [TextContent(type="text", text=response_text)]
 
     async def handle_cost_estimate(self, arguments: dict[str, Any]) -> list[TextContent]:
         """Handle azure_cost_estimate tool calls."""
+        discount_percentage, discount_specified, used_default_discount = self._resolve_discount(arguments)
+
         result = await self._pricing_service.estimate_costs(**arguments)
+
+        # Add discount metadata for formatting
+        result["_discount_metadata"] = {
+            "discount_specified": discount_specified,
+            "used_default_discount": used_default_discount,
+            "discount_percentage": discount_percentage,
+        }
+
         response_text = format_cost_estimate_response(result)
         return [TextContent(type="text", text=response_text)]
 

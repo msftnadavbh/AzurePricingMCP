@@ -3,6 +3,28 @@
 import json
 from typing import Any
 
+# Tip messages for discount guidance
+DISCOUNT_TIP_NO_DISCOUNT = (
+    "\n💡 **Tip:** Want to see potential savings? Specify `discount_percentage` "
+    "(enterprise discounts typically range 5-20%) or set `show_with_discount=true` to apply a discount.\n"
+)
+DISCOUNT_TIP_DEFAULT_USED = (
+    "\n💡 **Tip:** 10% discount applied, which is a default. "
+    "Specify `discount_percentage` to use a custom discount rate.\n"
+)
+
+
+def _get_discount_tip(result: dict[str, Any]) -> str:
+    """Get the appropriate discount tip based on discount metadata."""
+    metadata = result.get("_discount_metadata", {})
+
+    if metadata.get("used_default_discount"):
+        return DISCOUNT_TIP_DEFAULT_USED
+    elif not metadata.get("discount_specified") and metadata.get("discount_percentage", 0) == 0:
+        return DISCOUNT_TIP_NO_DISCOUNT
+
+    return ""
+
 
 def format_price_search_response(result: dict[str, Any]) -> str:
     """Format the price search response for display."""
@@ -62,6 +84,9 @@ def format_price_search_response(result: dict[str, Any]) -> str:
 
             response_text += "**Detailed Pricing:**\n"
             response_text += json.dumps(formatted_items, indent=2)
+
+            # Add discount tip
+            response_text += _get_discount_tip(result)
 
             return response_text
         else:
@@ -164,6 +189,9 @@ def format_price_compare_response(result: dict[str, Any]) -> str:
 
     response_text += json.dumps(result["comparisons"], indent=2)
 
+    # Add discount tip
+    response_text += _get_discount_tip(result)
+
     return response_text
 
 
@@ -235,6 +263,9 @@ Showing top: {result['showing_top']}
             original = rec.get("original_price", 0)
             response_text += f"   {i}. {location}: ${original:.6f}\n"
 
+    # Add discount tip
+    response_text += _get_discount_tip(result)
+
     return response_text
 
 
@@ -290,6 +321,9 @@ Original Pricing (before discount):
 - Original Monthly Cost: ${plan['original_monthly_cost']}
 - Original Yearly Cost: ${plan['original_yearly_cost']}
 """
+
+    # Add discount tip
+    estimate_text += _get_discount_tip(result)
 
     return estimate_text
 
