@@ -5,7 +5,7 @@ import pytest
 
 from azure_pricing_mcp.client import AzurePricingClient
 from azure_pricing_mcp.handlers import ToolHandlers
-from azure_pricing_mcp.server import create_server
+from azure_pricing_mcp.server import AzurePricingServer, create_server
 from azure_pricing_mcp.services import PricingService, SKUService
 from azure_pricing_mcp.services.retirement import RetirementService
 
@@ -52,11 +52,52 @@ async def test_mcp_server(services):
 
 @pytest.mark.asyncio
 async def test_server_creation():
-    """Test that server can be created."""
+    """Test that server can be created with tuple return (default)."""
     server, pricing_server = create_server()
     assert server is not None
     assert server.name == "azure-pricing"
     assert pricing_server is not None
+    assert isinstance(pricing_server, AzurePricingServer)
+
+
+@pytest.mark.asyncio
+async def test_server_creation_without_pricing_server():
+    """Test that server can be created with only Server return."""
+    server = create_server(return_pricing_server=False)
+    assert server is not None
+    assert server.name == "azure-pricing"
+    # Should not be a tuple
+    assert not isinstance(server, tuple)
+
+
+@pytest.mark.asyncio
+async def test_pricing_server_lifecycle():
+    """Test AzurePricingServer lifecycle methods."""
+    pricing_server = AzurePricingServer()
+
+    # Initially not active
+    assert not pricing_server.is_active
+
+    # Initialize
+    await pricing_server.initialize()
+    assert pricing_server.is_active
+
+    # Shutdown
+    await pricing_server.shutdown()
+    assert not pricing_server.is_active
+
+
+@pytest.mark.asyncio
+async def test_pricing_server_context_manager():
+    """Test AzurePricingServer as async context manager."""
+    pricing_server = AzurePricingServer()
+
+    assert not pricing_server.is_active
+
+    async with pricing_server:
+        assert pricing_server.is_active
+
+    assert not pricing_server.is_active
 
 
 @pytest.mark.integration
