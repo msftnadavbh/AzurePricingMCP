@@ -44,11 +44,11 @@ def get_tool_definitions() -> list[Tool]:
                     },
                     "discount_percentage": {
                         "type": "number",
-                        "description": "Discount percentage to apply to prices (e.g., 10 for 10% discount). If not specified, no discount is applied.",
+                        "description": "Discount percentage to apply to prices (e.g., 10 for 10% discount). If not specified and show_with_discount is false, no discount is applied. If show_with_discount is true, defaults to 10%.",
                     },
                     "show_with_discount": {
                         "type": "boolean",
-                        "description": "Set to true to apply a discount (uses default 10% if discount_percentage not specified)",
+                        "description": "Set to true to apply a discount; uses default 10% unless discount_percentage is explicitly specified.",
                         "default": False,
                     },
                     "validate_sku": {
@@ -85,11 +85,11 @@ def get_tool_definitions() -> list[Tool]:
                     },
                     "discount_percentage": {
                         "type": "number",
-                        "description": "Discount percentage to apply to prices (e.g., 10 for 10% discount). If not specified, no discount is applied.",
+                        "description": "Discount percentage to apply to prices (e.g., 10 for 10% discount). If not specified and show_with_discount is false, no discount is applied. If show_with_discount is true, defaults to 10%.",
                     },
                     "show_with_discount": {
                         "type": "boolean",
-                        "description": "Set to true to apply a discount (uses default 10% if discount_percentage not specified)",
+                        "description": "Set to true to apply a discount; uses default 10% unless discount_percentage is explicitly specified.",
                         "default": False,
                     },
                 },
@@ -126,11 +126,11 @@ def get_tool_definitions() -> list[Tool]:
                     },
                     "discount_percentage": {
                         "type": "number",
-                        "description": "Discount percentage to apply to prices (e.g., 10 for 10% discount). If not specified, no discount is applied.",
+                        "description": "Discount percentage to apply to prices (e.g., 10 for 10% discount). If not specified and show_with_discount is false, no discount is applied. If show_with_discount is true, defaults to 10%.",
                     },
                     "show_with_discount": {
                         "type": "boolean",
-                        "description": "Set to true to apply a discount (uses default 10% if discount_percentage not specified)",
+                        "description": "Set to true to apply a discount; uses default 10% unless discount_percentage is explicitly specified.",
                         "default": False,
                     },
                 },
@@ -219,11 +219,11 @@ def get_tool_definitions() -> list[Tool]:
                     },
                     "discount_percentage": {
                         "type": "number",
-                        "description": "Discount percentage to apply to prices (e.g., 10 for 10% discount). If not specified, no discount is applied.",
+                        "description": "Discount percentage to apply to prices (e.g., 10 for 10% discount). If not specified and show_with_discount is false, no discount is applied. If show_with_discount is true, defaults to 10%.",
                     },
                     "show_with_discount": {
                         "type": "boolean",
-                        "description": "Set to true to apply a discount (uses default 10% if discount_percentage not specified)",
+                        "description": "Set to true to apply a discount; uses default 10% unless discount_percentage is explicitly specified.",
                         "default": False,
                     },
                 },
