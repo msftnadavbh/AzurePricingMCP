@@ -5,6 +5,29 @@ All notable changes to the Azure Pricing MCP Server will be documented in this f
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.0] - 2026-02-10
+
+### Added
+
+- **Orphaned Resource Detection Tool** (contributed by [@iditbnaya](https://github.com/iditbnaya))
+  - `find_orphaned_resources` - Detect orphaned Azure resources and compute wasted costs
+  - Scans for unattached managed disks, orphaned NICs, public IPs, NSGs, and empty App Service Plans
+  - Integrates with Azure Cost Management API for historical cost lookup
+  - Groups results by resource type with per-type summary tables
+  - Configurable lookback period (default: 60 days)
+  - Supports scanning all subscriptions or a single subscription
+
+- **Orphaned Resources Service** (`services/orphaned_resources.py`, `services/orphaned.py`)
+  - `OrphanedResourceScanner` for async Resource Graph queries
+  - Azure Cost Management integration for per-resource cost lookup
+  - Uses existing aiohttp and azure-identity - no new dependencies
+
+### Documentation
+
+- Added orphaned resource detection to TOOLS.md
+- Added detailed feature documentation in FEATURES.md
+- Added [@iditbnaya](https://github.com/iditbnaya) as contributor
+
 ## [3.1.0] - 2026-01-28
 
 ### Added
