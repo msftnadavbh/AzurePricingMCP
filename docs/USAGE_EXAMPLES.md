@@ -23,6 +23,7 @@ Copy these queries directly or adapt them to your needs.
 - [Region Recommendations](#region-recommendations)
 - [Multi-Node & Cluster Pricing](#multi-node--cluster-pricing)
 - [Spot VM Tools](#spot-vm-tools)
+- [Orphaned Resource Detection](#orphaned-resource-detection)
 
 **Discovery & Reference**
 - [SKU Discovery](#sku-discovery)
@@ -343,6 +344,84 @@ Cost Comparison:
 | 1-Year RI | $354.78        | 37%     |
 
 Recommendation: Spot VMs recommended for batch processing
+```
+
+---
+
+## Orphaned Resource Detection
+
+**Note:** Requires Azure authentication (`az login`, service principal, or managed identity).
+
+Detect orphaned Azure resources that are incurring costs without providing value. Uses `find_orphaned_resources` tool.
+
+### Scan All Subscriptions
+
+**Query:** "Find all orphaned resources across my Azure subscriptions"
+
+**Response:**
+```
+### Orphaned Resource Report
+
+Total orphaned resources: 5
+Estimated wasted cost (60 days): $127.50 USD
+Subscriptions scanned: 3
+
+#### Summary by Type
+
+| Resource Type | Count | Est. Cost |
+|---------------|-------|-----------|
+| Unattached Disk | 2 | $85.00 |
+| Orphaned Public IP | 2 | $42.50 |
+| Orphaned NSG | 1 | $0.00 |
+```
+
+### Custom Lookback Period
+
+**Query:** "Show me orphaned resources with costs from the last 30 days"
+
+Uses `days=30` parameter to adjust the cost calculation window.
+
+### Single Subscription Scan
+
+**Query:** "Scan for orphaned resources in my primary subscription only"
+
+Uses `all_subscriptions=false` to limit the scan scope.
+
+### Detected Resource Types
+
+The tool detects these orphaned resource types:
+
+| Resource Type | Detection Criteria |
+|---------------|--------------------|
+| **Unattached Disk** | Managed disks with no `managedBy` reference |
+| **Orphaned NIC** | Network interfaces not attached to a VM or private endpoint |
+| **Orphaned Public IP** | Public IPs not associated with any resource |
+| **Orphaned NSG** | Network security groups not attached to any NIC or subnet |
+| **Empty App Service Plan** | App Service Plans with zero hosted apps |
+
+### Cost Analysis
+
+**Query:** "How much am I wasting on orphaned resources?"
+
+**Response:**
+```
+### Orphaned Resource Report
+
+Total orphaned resources: 3
+Estimated wasted cost (60 days): $89.25 USD
+
+#### Unattached Disk (2)
+
+| Name | Resource Group | Location | Cost |
+|------|----------------|----------|------|
+| old-data-disk | prod-rg | eastus | $52.00 |
+| temp-backup | dev-rg | westus2 | $30.00 |
+
+#### Orphaned Public IP (1)
+
+| Name | Resource Group | Location | Cost |
+|------|----------------|----------|------|
+| unused-pip | test-rg | eastus | $7.25 |
 ```
 
 ---
