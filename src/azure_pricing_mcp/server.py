@@ -128,6 +128,8 @@ def _register_tool_handlers(server: Server, pricing_server: AzurePricingServer) 
             return await handlers.handle_simulate_eviction(arguments)
         elif name == "find_orphaned_resources":
             return await handlers.handle_find_orphaned_resources(arguments)
+        elif name == "azure_ptu_sizing":
+            return await handlers.handle_ptu_sizing(arguments)
         else:
             return [TextContent(type="text", text=f"Unknown tool: {name}")]
 

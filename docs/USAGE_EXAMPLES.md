@@ -24,6 +24,7 @@ Copy these queries directly or adapt them to your needs.
 - [Multi-Node & Cluster Pricing](#multi-node--cluster-pricing)
 - [Spot VM Tools](#spot-vm-tools)
 - [Orphaned Resource Detection](#orphaned-resource-detection)
+- [PTU Sizing](#ptu-sizing)
 
 **Discovery & Reference**
 - [SKU Discovery](#sku-discovery)
@@ -423,6 +424,95 @@ Estimated wasted cost (60 days): $89.25 USD
 |------|----------------|----------|------|
 | unused-pip | test-rg | eastus | $7.25 |
 ```
+
+---
+
+## PTU Sizing
+
+Estimate Provisioned Throughput Units (PTUs) for Azure OpenAI / AI Foundry model deployments. Uses `azure_ptu_sizing` tool.
+
+**No authentication required** - PTU calculations are purely offline using official Microsoft data.
+
+### Basic PTU Estimation
+
+**Query:** "How many PTUs do I need for gpt-4.1 at 100 RPM with 500 input and 200 output tokens?"
+
+**Response:**
+```
+⚡ PTU Sizing Estimate
+
+Model: gpt-4.1
+Deployment: Global Provisioned
+
+Workload Shape:
+- Requests/min: 100
+- Input tokens/request: 500
+- Output tokens/request: 200
+
+Calculation:
+- Output multiplier: 1 output = 4 input tokens
+- Equivalent TPM: 130,000
+- Input TPM per PTU: 3,000
+- Raw PTU estimate: 43.33
+
+✅ Recommended PTUs: 45
+(Minimum: 15, Scale increment: 5)
+```
+
+### With Caching
+
+**Query:** "Estimate PTUs for gpt-5 with 50 RPM, 1000 input tokens, 500 output tokens, and 300 cached tokens using DataZoneProvisioned"
+
+**Response:**
+```
+⚡ PTU Sizing Estimate
+
+Model: gpt-5
+Deployment: Data Zone Provisioned
+
+Workload Shape:
+- Requests/min: 50
+- Input tokens/request: 1,000
+- Output tokens/request: 500
+- Cached tokens/request: 300
+
+Calculation:
+- Output multiplier: 1 output = 8 input tokens (gpt-5 specific)
+- Effective input (after cache): 700
+- Equivalent TPM: 235,000
+
+✅ Recommended PTUs: 50
+```
+
+### Regional Deployment
+
+**Query:** "Calculate PTUs for o4-mini Regional deployment at 200 RPM with 300 input and 150 output tokens"
+
+Uses different minimum PTUs and scale increments for Regional deployments.
+
+### With Cost Estimation
+
+**Query:** "Estimate PTU cost for gpt-4o in eastus with 400 RPM, 300 input tokens, 400 output tokens"
+
+Uses `include_cost=true` to fetch live $/PTU/hr pricing.
+
+### Supported Models
+
+| Model Family | Models |
+|-------------|--------|
+| **GPT-5.x** | gpt-5.2, gpt-5.1, gpt-5, gpt-5-mini, codex variants |
+| **GPT-4.1** | gpt-4.1, gpt-4.1-mini, gpt-4.1-nano |
+| **GPT-4o** | gpt-4o, gpt-4o-mini |
+| **O-series** | o3, o4-mini, o3-mini, o1 |
+| **Direct Azure** | Llama-3.3-70B-Instruct, DeepSeek-R1, DeepSeek-V3-0324 |
+
+### Deployment Types
+
+| Type | Processing | Min/Increment |
+|------|------------|---------------|
+| **GlobalProvisioned** | Any Azure geography | Lowest minimums |
+| **DataZoneProvisioned** | Within data zone (EU, US) | Same as Global |
+| **RegionalProvisioned** | Single region | Higher minimums |
 
 ---
 

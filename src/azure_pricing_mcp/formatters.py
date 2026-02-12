@@ -684,3 +684,114 @@ def format_orphaned_resources_response(result: dict[str, Any]) -> str:
 
     response_lines.append(result.get("note", ""))
     return "\n".join(response_lines)
+
+
+# ---------------------------------------------------------------------------
+# PTU Sizing + Cost Planner
+# ---------------------------------------------------------------------------
+
+
+def format_ptu_sizing_response(result: dict[str, Any]) -> str:
+    """Format PTU sizing estimation result as Markdown.
+
+    Args:
+        result: Result dict from PTUService.estimate_ptu_sizing().
+
+    Returns:
+        Formatted Markdown string.
+    """
+    if "error" in result:
+        lines = [f"❌ **PTU Sizing Error**: {result['error']}"]
+        if "supported_models" in result:
+            models = ", ".join(f"`{m}`" for m in result["supported_models"])
+            lines.append(f"\n**Supported models**: {models}")
+        if "supported_types" in result:
+            types = ", ".join(f"`{t}`" for t in result["supported_types"])
+            lines.append(f"\n**Supported deployment types**: {types}")
+        if "suggestion" in result:
+            lines.append(f"\n💡 {result['suggestion']}")
+        if "data_source" in result:
+            lines.append(f"\n📖 [Official PTU documentation]({result['data_source']})")
+        return "\n".join(lines)
+
+    # ── Header ──────────────────────────────────────────────────────────
+    lines = ["# ⚡ PTU Sizing Estimate\n"]
+
+    # ── Model & Deployment ──────────────────────────────────────────────
+    lines.append("## Model & Deployment")
+    lines.append(f"- **Model**: `{result['model']}`")
+    lines.append(f"- **Deployment type**: {result['deployment_label']}")
+    lines.append(f"- **Processing**: {result['deployment_description']}")
+    lines.append("")
+
+    # ── Workload Shape ──────────────────────────────────────────────────
+    wl = result["workload"]
+    lines.append("## Workload Shape (peak)")
+    lines.append(f"- **Requests/min (RPM)**: {wl['rpm']:,}")
+    lines.append(f"- **Avg input tokens/request**: {wl['avg_input_tokens']:,}")
+    lines.append(f"- **Avg output tokens/request**: {wl['avg_output_tokens']:,}")
+    if wl["cached_tokens_per_request"] > 0:
+        lines.append(f"- **Cached tokens/request**: {wl['cached_tokens_per_request']:,}")
+    lines.append("")
+
+    # ── Calculation Breakdown ───────────────────────────────────────────
+    calc = result["calculation"]
+    lines.append("## Calculation Breakdown")
+    lines.append(f"- **Output multiplier**: 1 output token = **{calc['output_multiplier']}** input tokens")
+    if result["workload"]["cached_tokens_per_request"] > 0:
+        lines.append(f"- **Effective input tokens** (after cache deduction): {calc['effective_input_tokens']:,}")
+    lines.append(f"- **Equivalent tokens/request**: {calc['eq_tokens_per_request']:,}")
+    lines.append(f"- **Equivalent TPM**: {calc['eq_tpm']:,}")
+    lines.append(f"- **Input TPM per PTU**: {calc['input_tpm_per_ptu']:,}")
+    lines.append(f"- **Raw PTU estimate**: {calc['raw_ptu']}")
+    lines.append("")
+
+    # ── Result ──────────────────────────────────────────────────────────
+    res = result["result"]
+    lines.append("## ✅ Recommended PTUs")
+    lines.append(f"### **{res['recommended_ptus']:,} PTUs**")
+    lines.append("")
+    lines.append("| Metric | Value |")
+    lines.append("|--------|-------|")
+    lines.append(f"| Raw (unrounded) | {res['raw_ptus']} |")
+    lines.append(f"| Rounded (deployed) | **{res['recommended_ptus']:,}** |")
+    lines.append(f"| Minimum deployment | {res['minimum_ptus']:,} |")
+    lines.append(f"| Scale increment | {res['scale_increment']:,} |")
+    lines.append(f"| Max per deployment | {res['max_ptus_per_deployment']:,} |")
+    lines.append("")
+
+    # ── Cost Estimate ───────────────────────────────────────────────────
+    if "cost" in result:
+        cost = result["cost"]
+        lines.append("## 💰 Cost Estimate")
+        if "hourly_cost" in cost:
+            lines.append("| Metric | Value |")
+            lines.append("|--------|-------|")
+            lines.append(f"| $/PTU/hour | {cost['currency']} {cost['price_per_ptu_hour']:.4f} |")
+            lines.append(
+                f"| Hourly cost ({cost['deployed_ptus']:,} PTUs) | {cost['currency']} {cost['hourly_cost']:,.2f} |"
+            )
+            lines.append(f"| Monthly cost (730h) | {cost['currency']} {cost['monthly_cost_730h']:,.2f} |")
+            lines.append(f"| Meter | {cost['meter_name']} |")
+            lines.append(f"| Region | {cost['region']} |")
+            lines.append("")
+            lines.append(f"💡 {cost['reservation_guidance']}")
+        else:
+            lines.append(f"⚠️ {cost.get('note', 'Pricing data unavailable.')}")
+            if "pricing_url" in cost:
+                lines.append(f"\n🔗 [Azure OpenAI Pricing]({cost['pricing_url']})")
+        lines.append("")
+
+    # ── Warnings ────────────────────────────────────────────────────────
+    if result.get("warnings"):
+        lines.append("## ⚠️ Important Notes")
+        for w in result["warnings"]:
+            lines.append(f"- {w}")
+        lines.append("")
+
+    # ── Footer ──────────────────────────────────────────────────────────
+    lines.append(
+        f"---\n📖 Data version: {result.get('data_version', 'N/A')} | " f"[Source]({result.get('data_source', '')})"
+    )
+
+    return "\n".join(lines)
