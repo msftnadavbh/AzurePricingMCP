@@ -15,6 +15,7 @@ from .formatters import (
     format_orphaned_resources_response,
     format_price_compare_response,
     format_price_search_response,
+    format_ptu_sizing_response,
     format_region_recommend_response,
     format_ri_pricing_response,
     format_simulate_eviction_response,
@@ -22,7 +23,7 @@ from .formatters import (
     format_spot_eviction_rates_response,
     format_spot_price_history_response,
 )
-from .services import DatabricksService, PricingService, SKUService, SpotService
+from .services import DatabricksService, PricingService, PTUService, SKUService, SpotService
 from .services.orphaned import OrphanedResourcesService
 
 logger = logging.getLogger(__name__)
@@ -44,6 +45,7 @@ class ToolHandlers(DatabricksHandlers):
         self._spot_service = spot_service
         self._orphaned_service = orphaned_service
         self._databricks_service = databricks_service
+        self._ptu_service: PTUService | None = None
 
     def _resolve_discount(self, arguments: dict[str, Any]) -> tuple[float, bool, bool]:
         """Resolve discount settings from arguments.
@@ -180,6 +182,14 @@ class ToolHandlers(DatabricksHandlers):
             self._orphaned_service = OrphanedResourcesService()
         return self._orphaned_service
 
+    def _get_ptu_service(self) -> PTUService:
+        """Get or create the PTUService (lazy initialization)."""
+        if self._ptu_service is None:
+            # Pass the pricing client for cost lookups (public API, no auth needed)
+            client = getattr(self._pricing_service, "_client", None)
+            self._ptu_service = PTUService(client=client)
+        return self._ptu_service
+
     async def handle_spot_eviction_rates(self, arguments: dict[str, Any]) -> list[TextContent]:
         """Handle spot_eviction_rates tool calls."""
         spot_service = self._get_spot_service()
@@ -218,6 +228,23 @@ class ToolHandlers(DatabricksHandlers):
             all_subscriptions=arguments.get("all_subscriptions", True),
         )
         response_text = format_orphaned_resources_response(result)
+        return [TextContent(type="text", text=response_text)]
+
+    async def handle_ptu_sizing(self, arguments: dict[str, Any]) -> list[TextContent]:
+        """Handle azure_ptu_sizing tool calls."""
+        ptu_service = self._get_ptu_service()
+        result = await ptu_service.estimate_ptu_sizing(
+            model=arguments["model"],
+            deployment_type=arguments["deployment_type"],
+            rpm=arguments["rpm"],
+            avg_input_tokens=arguments["avg_input_tokens"],
+            avg_output_tokens=arguments["avg_output_tokens"],
+            cached_tokens_per_request=arguments.get("cached_tokens_per_request", 0),
+            include_cost=arguments.get("include_cost", False),
+            region=arguments.get("region", "eastus"),
+            currency_code=arguments.get("currency_code", "USD"),
+        )
+        response_text = format_ptu_sizing_response(result)
         return [TextContent(type="text", text=response_text)]
 
 
@@ -280,6 +307,10 @@ def register_tool_handlers(server: Any, tool_handlers: ToolHandlers) -> None:
 
             elif name == "databricks_compare_workloads":
                 return await tool_handlers.handle_databricks_compare_workloads(arguments)
+
+            # PTU Sizing + Cost Planner
+            elif name == "azure_ptu_sizing":
+                return await tool_handlers.handle_ptu_sizing(arguments)
 
             else:
                 return [TextContent(type="text", text=f"Unknown tool: {name}")]

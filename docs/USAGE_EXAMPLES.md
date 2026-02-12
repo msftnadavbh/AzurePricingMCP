@@ -24,6 +24,7 @@ Copy these queries directly or adapt them to your needs.
 - [Multi-Node & Cluster Pricing](#multi-node--cluster-pricing)
 - [Spot VM Tools](#spot-vm-tools)
 - [Orphaned Resource Detection](#orphaned-resource-detection)
+- [PTU Sizing](#ptu-sizing)
 
 **Discovery & Reference**
 - [SKU Discovery](#sku-discovery)
@@ -423,6 +424,165 @@ Estimated wasted cost (60 days): $89.25 USD
 |------|----------------|----------|------|
 | unused-pip | test-rg | eastus | $7.25 |
 ```
+
+---
+
+## PTU Sizing
+
+Estimate Provisioned Throughput Units (PTUs) for Azure OpenAI / AI Foundry model deployments. Uses `azure_ptu_sizing` tool.
+
+**No authentication required** - PTU calculations are purely offline using official Microsoft data.
+
+The tool needs three required inputs: **RPM** (requests per minute), **avg input tokens**, and **avg output tokens** per request. Here's how to get them.
+
+### Getting Your Input Data
+
+#### Option A — Azure CLI (no Log Analytics)
+
+Copy-paste this script — it queries the last 7 days and prints your three inputs:
+
+```bash
+# Replace {sub}, {rg}, {name} with your values
+RES="/subscriptions/{sub}/resourceGroups/{rg}/providers/Microsoft.CognitiveServices/accounts/{name}"
+START=$(date -u -d "7 days ago" +%Y-%m-%dT%H:%M:%SZ)
+END=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+
+REQS=$(az monitor metrics list --resource "$RES" --metric AzureOpenAIRequests \
+  --aggregation Total --interval P7D --start-time "$START" --end-time "$END" \
+  --query "value[0].timeseries[0].data[0].total" -o tsv)
+
+INPUT=$(az monitor metrics list --resource "$RES" --metric ProcessedPromptTokens \
+  --aggregation Total --interval P7D --start-time "$START" --end-time "$END" \
+  --query "value[0].timeseries[0].data[0].total" -o tsv)
+
+OUTPUT=$(az monitor metrics list --resource "$RES" --metric GeneratedTokens \
+  --aggregation Total --interval P7D --start-time "$START" --end-time "$END" \
+  --query "value[0].timeseries[0].data[0].total" -o tsv)
+
+PEAK=$(az monitor metrics list --resource "$RES" --metric AzureOpenAIRequests \
+  --aggregation Total --interval PT1H --start-time "$START" --end-time "$END" \
+  --query "max(value[0].timeseries[0].data[].total)" -o tsv)
+
+echo "=== Your PTU Sizing Inputs ==="
+echo "rpm:               $(echo "$PEAK / 60" | bc)"
+echo "avg_input_tokens:  $(echo "$INPUT / $REQS" | bc)"
+echo "avg_output_tokens: $(echo "$OUTPUT / $REQS" | bc)"
+```
+
+#### Option B — KQL (requires Log Analytics)
+
+Enable diagnostic settings on your OpenAI resource → send to Log Analytics, then run:
+
+```kql
+AzureMetrics
+| where ResourceProvider == "MICROSOFT.COGNITIVESERVICES"
+| where TimeGenerated >= ago(7d)
+| summarize
+    TotalRequests   = sumif(Total, MetricName == "AzureOpenAIRequests"),
+    TotalInputTok   = sumif(Total, MetricName == "ProcessedPromptTokens"),
+    TotalOutputTok  = sumif(Total, MetricName == "GeneratedTokens")
+    by bin(TimeGenerated, 1h)
+| summarize
+    AvgRPM         = avg(TotalRequests) / 60,
+    PeakRPM        = max(TotalRequests) / 60,
+    AvgInputTokens = avg(TotalInputTok / TotalRequests),
+    AvgOutputTokens= avg(TotalOutputTok / TotalRequests)
+```
+
+Use `PeakRPM` to size for burst traffic.
+
+#### No Azure Data Yet?
+
+| Use Case | Typical RPM | Avg Input Tokens | Avg Output Tokens |
+|----------|:-----------:|:----------------:|:-----------------:|
+| Chatbot / Q&A | 30–100 | 200–500 | 100–300 |
+| RAG (retrieval-augmented) | 20–80 | 1,500–3,000 | 300–600 |
+| Document summarization | 10–30 | 3,000–6,000 | 500–1,000 |
+| Code generation | 20–60 | 1,000–2,000 | 500–1,500 |
+| Batch processing | 50–200 | 500–1,500 | 200–500 |
+
+> Start conservative — you can always scale PTUs up later.
+
+### Basic PTU Estimation
+
+**Query:** "How many PTUs do I need for gpt-4.1 at 100 RPM with 500 input and 200 output tokens?"
+
+**Response:**
+```
+⚡ PTU Sizing Estimate
+
+Model: gpt-4.1
+Deployment: Global Provisioned
+
+Workload Shape:
+- Requests/min: 100
+- Input tokens/request: 500
+- Output tokens/request: 200
+
+Calculation:
+- Output multiplier: 1 output = 4 input tokens
+- Equivalent TPM: 130,000
+- Input TPM per PTU: 3,000
+- Raw PTU estimate: 43.33
+
+✅ Recommended PTUs: 45
+(Minimum: 15, Scale increment: 5)
+```
+
+### With Caching
+
+**Query:** "Estimate PTUs for gpt-5 with 50 RPM, 1000 input tokens, 500 output tokens, and 300 cached tokens using DataZoneProvisioned"
+
+**Response:**
+```
+⚡ PTU Sizing Estimate
+
+Model: gpt-5
+Deployment: Data Zone Provisioned
+
+Workload Shape:
+- Requests/min: 50
+- Input tokens/request: 1,000
+- Output tokens/request: 500
+- Cached tokens/request: 300
+
+Calculation:
+- Output multiplier: 1 output = 8 input tokens (gpt-5 specific)
+- Effective input (after cache): 700
+- Equivalent TPM: 235,000
+
+✅ Recommended PTUs: 50
+```
+
+### Regional Deployment
+
+**Query:** "Calculate PTUs for o4-mini Regional deployment at 200 RPM with 300 input and 150 output tokens"
+
+Uses different minimum PTUs and scale increments for Regional deployments.
+
+### With Cost Estimation
+
+**Query:** "Estimate PTU cost for gpt-4o in eastus with 400 RPM, 300 input tokens, 400 output tokens"
+
+Uses `include_cost=true` to fetch live $/PTU/hr pricing.
+
+### Supported Models
+
+| Model Family | Models |
+|-------------|--------|
+| **GPT-5.x** | gpt-5.2, gpt-5.1, gpt-5, gpt-5-mini, codex variants |
+| **GPT-4.1** | gpt-4.1, gpt-4.1-mini, gpt-4.1-nano |
+| **GPT-4o** | gpt-4o, gpt-4o-mini |
+| **O-series** | o3, o4-mini, o3-mini, o1 |
+| **Direct Azure** | Llama-3.3-70B-Instruct, DeepSeek-R1, DeepSeek-R1-0528, DeepSeek-V3-0324 |
+
+### Deployment Types
+
+| Type | Processing | Min/Increment |
+|------|------------|---------------|
+| **GlobalProvisioned** | Any Azure geography | Lowest minimums |
+| **DataZoneProvisioned** | Within data zone (EU, US) | Same as Global |
+| **RegionalProvisioned** | Single region | Higher minimums |
 
 ---
 

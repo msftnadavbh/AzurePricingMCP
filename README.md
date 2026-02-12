@@ -43,6 +43,7 @@ Then configure your AI assistant. See [Integrations](#-integrations).
 - **Retirement Warnings** - Alerts for retiring VM SKUs
 - **Spot VM Intelligence** - Eviction rates and price history (requires Azure auth)
 - **Orphaned Resources** - Detect unused resources with real cost calculation (requires Azure auth)
+- **PTU Sizing** - Estimate Provisioned Throughput Units for Azure OpenAI deployments
 
 📖 **[Full feature details →](docs/FEATURES.md)**
 
@@ -50,7 +51,7 @@ Then configure your AI assistant. See [Integrations](#-integrations).
 
 ## 🛠️ Tools
 
-12 tools available for AI assistants:
+13 tools available for AI assistants:
 
 - `azure_price_search` - Search retail prices
 - `azure_price_compare` - Compare across regions/SKUs
@@ -60,6 +61,7 @@ Then configure your AI assistant. See [Integrations](#-integrations).
 - `azure_discover_skus` / `azure_sku_discovery` - SKU lookup
 - `spot_eviction_rates` / `spot_price_history` / `simulate_eviction` - Spot VM tools
 - `find_orphaned_resources` - Detect orphaned resources with cost analysis
+- `azure_ptu_sizing` - Estimate PTUs for Azure OpenAI deployments
 
 📖 **[Tool documentation →](docs/TOOLS.md)**
 

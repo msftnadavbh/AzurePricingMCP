@@ -139,6 +139,8 @@ def _register_tool_handlers(server: Server, pricing_server: AzurePricingServer) 
             return await handlers.handle_databricks_cost_estimate(arguments)
         elif name == "databricks_compare_workloads":
             return await handlers.handle_databricks_compare_workloads(arguments)
+        elif name == "azure_ptu_sizing":
+            return await handlers.handle_ptu_sizing(arguments)
         else:
             return [TextContent(type="text", text=f"Unknown tool: {name}")]
 

@@ -366,4 +366,67 @@ def get_tool_definitions() -> list[Tool]:
                 },
             },
         ),
+        # PTU Sizing + Cost Planner (no auth required for sizing; public API for cost)
+        Tool(
+            name="azure_ptu_sizing",
+            description=(
+                "Estimate required Provisioned Throughput Units (PTUs) for Azure OpenAI / "
+                "AI Foundry model deployments. Calculates PTUs based on workload shape "
+                "(RPM, input/output tokens, caching) with official rounding rules. "
+                "Optionally estimates hourly/monthly cost via Azure Retail Prices API. "
+                "Supports Global, Data Zone, and Regional Provisioned deployment types."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "model": {
+                        "type": "string",
+                        "description": (
+                            "Model identifier. Supported: gpt-5.2, gpt-5.2-codex, gpt-5.1, "
+                            "gpt-5.1-codex, gpt-5, gpt-5-mini, gpt-4.1, gpt-4.1-mini, "
+                            "gpt-4.1-nano, o3, o4-mini, gpt-4o, gpt-4o-mini, o3-mini, o1, "
+                            "Llama-3.3-70B-Instruct, DeepSeek-R1, DeepSeek-V3-0324, DeepSeek-R1-0528"
+                        ),
+                    },
+                    "deployment_type": {
+                        "type": "string",
+                        "description": "Provisioned deployment type",
+                        "enum": ["GlobalProvisioned", "DataZoneProvisioned", "RegionalProvisioned"],
+                    },
+                    "rpm": {
+                        "type": "integer",
+                        "description": "Requests per minute at peak workload",
+                    },
+                    "avg_input_tokens": {
+                        "type": "integer",
+                        "description": "Average input (prompt) tokens per request",
+                    },
+                    "avg_output_tokens": {
+                        "type": "integer",
+                        "description": "Average output (completion) tokens per request",
+                    },
+                    "cached_tokens_per_request": {
+                        "type": "integer",
+                        "description": "Average cached tokens per request (deducted 100%% from utilization). Default: 0",
+                        "default": 0,
+                    },
+                    "include_cost": {
+                        "type": "boolean",
+                        "description": "Fetch live $/PTU/hr pricing from Azure Retail Prices API. Default: false",
+                        "default": False,
+                    },
+                    "region": {
+                        "type": "string",
+                        "description": "Azure region for cost lookup (e.g., 'eastus', 'westeurope'). Default: 'eastus'",
+                        "default": "eastus",
+                    },
+                    "currency_code": {
+                        "type": "string",
+                        "description": "Currency code for pricing (default: 'USD')",
+                        "default": "USD",
+                    },
+                },
+                "required": ["model", "deployment_type", "rpm", "avg_input_tokens", "avg_output_tokens"],
+            },
+        ),
     ] + get_databricks_tool_definitions()

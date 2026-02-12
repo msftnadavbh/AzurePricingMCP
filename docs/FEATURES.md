@@ -18,6 +18,7 @@ The Azure Pricing MCP Server provides comprehensive Azure pricing intelligence t
 | 💱 **Multi-Currency** | Support for USD, EUR, GBP, and more |
 | 📊 **Real-time Data** | Live data from Azure Retail Prices API |
 | 🏷️ **Customer Discounts** | Apply discount percentages to all pricing queries |
+| ⚡ **PTU Sizing** | Estimate Provisioned Throughput Units for Azure OpenAI deployments |
 
 ---
 
@@ -123,6 +124,38 @@ Orphaned resource scanning requires the same Azure authentication as Spot VM too
 "Find all orphaned resources across my Azure subscriptions"
 "Scan for unattached disks and show me how much they cost"
 "Check for orphaned resources in the last 30 days"
+```
+
+---
+
+## PTU Sizing + Cost Planner
+
+Estimate Provisioned Throughput Units (PTUs) for Azure OpenAI / AI Foundry model deployments.
+
+### Capabilities
+
+| Feature | Description |
+|---------|-------------|
+| **Workload-based sizing** | Calculate PTUs from RPM, input/output tokens, and caching assumptions |
+| **19 supported models** | gpt-5.x, gpt-4.1, gpt-4o, o-series, DeepSeek, Llama, and codex variants |
+| **3 deployment types** | Global Provisioned, Data Zone Provisioned, Regional Provisioned |
+| **Official rounding rules** | Model-specific minimum PTUs and scale increments from Microsoft docs |
+| **Output multipliers** | Accounts for output token cost (e.g., gpt-5: 1 output = 8 input tokens) |
+| **Cache deduction** | Cached tokens deducted 100% from utilization |
+| **Optional cost estimation** | Live $/PTU/hr pricing via Azure Retail Prices API |
+| **Calculation transparency** | Shows all intermediate math, rounding rules, and data sources |
+
+### No Authentication Required
+
+PTU sizing calculations are purely offline. Optional cost lookup uses the public Azure Retail Prices API (no auth needed).
+
+### Example Usage
+
+```
+"How many PTUs do I need for gpt-4.1 at 100 RPM with 500 input and 200 output tokens?"
+"Estimate PTUs for gpt-5 with 50 RPM, 1000 prompt tokens, 500 completion tokens, using DataZoneProvisioned"
+"Size a gpt-4.1-mini deployment for 200 RPM with 300 input, 100 output tokens, and 150 cached tokens"
+"Estimate PTU cost for o4-mini in westeurope with 100 RPM"
 ```
 
 ---
