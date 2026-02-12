@@ -439,24 +439,24 @@ The tool needs three required inputs: **RPM** (requests per minute), **avg input
 
 #### Option A — Azure CLI (no Log Analytics)
 
-Copy-paste this script — it queries the last 7 days and prints your three inputs:
+Copy-paste this script — it queries the last 30 days and prints your three inputs:
 
 ```bash
 # Replace {sub}, {rg}, {name} with your values
 RES="/subscriptions/{sub}/resourceGroups/{rg}/providers/Microsoft.CognitiveServices/accounts/{name}"
-START=$(date -u -d "7 days ago" +%Y-%m-%dT%H:%M:%SZ)
+START=$(date -u -d "30 days ago" +%Y-%m-%dT%H:%M:%SZ)
 END=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 
 REQS=$(az monitor metrics list --resource "$RES" --metric AzureOpenAIRequests \
-  --aggregation Total --interval P7D --start-time "$START" --end-time "$END" \
+  --aggregation Total --interval P30D --start-time "$START" --end-time "$END" \
   --query "value[0].timeseries[0].data[0].total" -o tsv)
 
 INPUT=$(az monitor metrics list --resource "$RES" --metric ProcessedPromptTokens \
-  --aggregation Total --interval P7D --start-time "$START" --end-time "$END" \
+  --aggregation Total --interval P30D --start-time "$START" --end-time "$END" \
   --query "value[0].timeseries[0].data[0].total" -o tsv)
 
 OUTPUT=$(az monitor metrics list --resource "$RES" --metric GeneratedTokens \
-  --aggregation Total --interval P7D --start-time "$START" --end-time "$END" \
+  --aggregation Total --interval P30D --start-time "$START" --end-time "$END" \
   --query "value[0].timeseries[0].data[0].total" -o tsv)
 
 PEAK=$(az monitor metrics list --resource "$RES" --metric AzureOpenAIRequests \
@@ -476,7 +476,7 @@ Enable diagnostic settings on your OpenAI resource → send to Log Analytics, th
 ```kql
 AzureMetrics
 | where ResourceProvider == "MICROSOFT.COGNITIVESERVICES"
-| where TimeGenerated >= ago(7d)
+| where TimeGenerated >= ago(30d)
 | summarize
     TotalRequests   = sumif(Total, MetricName == "AzureOpenAIRequests"),
     TotalInputTok   = sumif(Total, MetricName == "ProcessedPromptTokens"),

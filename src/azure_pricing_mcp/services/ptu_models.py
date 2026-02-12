@@ -154,7 +154,7 @@ PTU_MODEL_TABLE: dict[str, dict] = {
     # ── Previous Azure OpenAI models ────────────────────────────────────
     "gpt-4o": {
         "input_tpm_per_ptu": 2_500,
-        "output_multiplier": 4,
+        "output_multiplier": 3,  # Verified via Foundry calculator; older model, different ratio
         "global_min_ptus": 15,
         "global_increment": 5,
         "regional_min_ptus": 50,
