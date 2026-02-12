@@ -433,6 +433,76 @@ Estimate Provisioned Throughput Units (PTUs) for Azure OpenAI / AI Foundry model
 
 **No authentication required** - PTU calculations are purely offline using official Microsoft data.
 
+The tool needs three required inputs: **RPM** (requests per minute), **avg input tokens**, and **avg output tokens** per request. Here's how to get them.
+
+### Getting Your Input Data
+
+#### Option A — Azure CLI (no Log Analytics)
+
+Pull the last 24 hours of metrics from your Azure OpenAI resource:
+
+```bash
+# Set your resource ID
+RES="/subscriptions/{sub}/resourceGroups/{rg}/providers/Microsoft.CognitiveServices/accounts/{name}"
+
+# Total requests (split by model deployment)
+az monitor metrics list --resource $RES \
+  --metric AzureOpenAIRequests --aggregation Total \
+  --interval PT1H --dimension ModelDeploymentName
+
+# Total input (prompt) tokens
+az monitor metrics list --resource $RES \
+  --metric ProcessedPromptTokens --aggregation Total --interval PT1H
+
+# Total output (completion) tokens
+az monitor metrics list --resource $RES \
+  --metric GeneratedTokens --aggregation Total --interval PT1H
+```
+
+Then compute your averages:
+
+```
+avg_input_tokens  = total_prompt_tokens / total_requests
+avg_output_tokens = total_completion_tokens / total_requests
+RPM               = peak_hour_requests / 60
+```
+
+> **Tip:** You can also view these metrics visually in **Azure Portal → your OpenAI resource → Monitoring → Metrics**.
+
+#### Option B — KQL (requires Log Analytics)
+
+Enable diagnostic settings on your OpenAI resource → send to Log Analytics, then run:
+
+```kql
+AzureMetrics
+| where ResourceProvider == "MICROSOFT.COGNITIVESERVICES"
+| where TimeGenerated >= ago(7d)
+| summarize
+    TotalRequests   = sumif(Total, MetricName == "AzureOpenAIRequests"),
+    TotalInputTok   = sumif(Total, MetricName == "ProcessedPromptTokens"),
+    TotalOutputTok  = sumif(Total, MetricName == "GeneratedTokens")
+    by bin(TimeGenerated, 1h)
+| summarize
+    AvgRPM         = avg(TotalRequests) / 60,
+    PeakRPM        = max(TotalRequests) / 60,
+    AvgInputTokens = avg(TotalInputTok / TotalRequests),
+    AvgOutputTokens= avg(TotalOutputTok / TotalRequests)
+```
+
+Use `PeakRPM` to size for burst traffic.
+
+#### No Azure Data Yet?
+
+| Use Case | Typical RPM | Avg Input Tokens | Avg Output Tokens |
+|----------|:-----------:|:----------------:|:-----------------:|
+| Chatbot / Q&A | 30–100 | 200–500 | 100–300 |
+| RAG (retrieval-augmented) | 20–80 | 1,500–3,000 | 300–600 |
+| Document summarization | 10–30 | 3,000–6,000 | 500–1,000 |
+| Code generation | 20–60 | 1,000–2,000 | 500–1,500 |
+| Batch processing | 50–200 | 500–1,500 | 200–500 |
+
+> Start conservative — you can always scale PTUs up later.
+
 ### Basic PTU Estimation
 
 **Query:** "How many PTUs do I need for gpt-4.1 at 100 RPM with 500 input and 200 output tokens?"
@@ -504,7 +574,7 @@ Uses `include_cost=true` to fetch live $/PTU/hr pricing.
 | **GPT-4.1** | gpt-4.1, gpt-4.1-mini, gpt-4.1-nano |
 | **GPT-4o** | gpt-4o, gpt-4o-mini |
 | **O-series** | o3, o4-mini, o3-mini, o1 |
-| **Direct Azure** | Llama-3.3-70B-Instruct, DeepSeek-R1, DeepSeek-V3-0324 |
+| **Direct Azure** | Llama-3.3-70B-Instruct, DeepSeek-R1, DeepSeek-R1-0528, DeepSeek-V3-0324 |
 
 ### Deployment Types
 

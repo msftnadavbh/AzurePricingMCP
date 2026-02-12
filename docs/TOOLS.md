@@ -51,6 +51,8 @@ No authentication required for sizing. Cost lookup uses the public Azure Retail 
 |------|-------------|
 | `azure_ptu_sizing` | Estimate required PTUs for Azure OpenAI model deployments based on workload shape (RPM, tokens, caching) with optional cost estimation |
 
+> 📖 **Need help finding your RPM and token counts?** See [PTU Sizing → Getting Your Input Data](USAGE_EXAMPLES.md#getting-your-input-data) for Azure CLI commands, KQL queries, and estimation tables.
+
 ---
 
 ## Example Queries
