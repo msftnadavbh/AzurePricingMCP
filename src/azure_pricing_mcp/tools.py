@@ -2,6 +2,8 @@
 
 from mcp.types import Tool
 
+from .databricks.tools import get_databricks_tool_definitions
+
 
 def get_tool_definitions() -> list[Tool]:
     """Get all tool definitions for the Azure Pricing MCP Server."""
@@ -364,4 +366,4 @@ def get_tool_definitions() -> list[Tool]:
                 },
             },
         ),
-    ]
+    ] + get_databricks_tool_definitions()

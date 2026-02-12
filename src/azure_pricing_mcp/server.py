@@ -19,7 +19,7 @@ from mcp.types import TextContent, Tool
 
 from .client import AzurePricingClient
 from .handlers import ToolHandlers
-from .services import PricingService, RetirementService, SKUService
+from .services import DatabricksService, PricingService, RetirementService, SKUService
 from .tools import get_tool_definitions
 
 # Configure logging
@@ -43,7 +43,12 @@ class AzurePricingServer:
         self._retirement_service = RetirementService(self._client)
         self._pricing_service = PricingService(self._client, self._retirement_service)
         self._sku_service = SKUService(self._pricing_service)
-        self._tool_handlers = ToolHandlers(self._pricing_service, self._sku_service)
+        self._databricks_service = DatabricksService(self._client)
+        self._tool_handlers = ToolHandlers(
+            self._pricing_service,
+            self._sku_service,
+            databricks_service=self._databricks_service,
+        )
         self._session_active = False
 
     async def __aenter__(self) -> "AzurePricingServer":
@@ -128,6 +133,12 @@ def _register_tool_handlers(server: Server, pricing_server: AzurePricingServer) 
             return await handlers.handle_simulate_eviction(arguments)
         elif name == "find_orphaned_resources":
             return await handlers.handle_find_orphaned_resources(arguments)
+        elif name == "databricks_dbu_pricing":
+            return await handlers.handle_databricks_dbu_pricing(arguments)
+        elif name == "databricks_cost_estimate":
+            return await handlers.handle_databricks_cost_estimate(arguments)
+        elif name == "databricks_compare_workloads":
+            return await handlers.handle_databricks_compare_workloads(arguments)
         else:
             return [TextContent(type="text", text=f"Unknown tool: {name}")]
 

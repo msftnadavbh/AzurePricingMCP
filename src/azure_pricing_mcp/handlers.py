@@ -6,6 +6,7 @@ from typing import Any
 from mcp.types import TextContent
 
 from .config import DEFAULT_CUSTOMER_DISCOUNT
+from .databricks.handlers import DatabricksHandlers
 from .formatters import (
     _get_discount_tip,
     format_cost_estimate_response,
@@ -21,13 +22,13 @@ from .formatters import (
     format_spot_eviction_rates_response,
     format_spot_price_history_response,
 )
-from .services import PricingService, SKUService, SpotService
+from .services import DatabricksService, PricingService, SKUService, SpotService
 from .services.orphaned import OrphanedResourcesService
 
 logger = logging.getLogger(__name__)
 
 
-class ToolHandlers:
+class ToolHandlers(DatabricksHandlers):
     """Handlers for MCP tool calls."""
 
     def __init__(
@@ -36,11 +37,13 @@ class ToolHandlers:
         sku_service: SKUService,
         spot_service: SpotService | None = None,
         orphaned_service: OrphanedResourcesService | None = None,
+        databricks_service: DatabricksService | None = None,
     ) -> None:
         self._pricing_service = pricing_service
         self._sku_service = sku_service
         self._spot_service = spot_service
         self._orphaned_service = orphaned_service
+        self._databricks_service = databricks_service
 
     def _resolve_discount(self, arguments: dict[str, Any]) -> tuple[float, bool, bool]:
         """Resolve discount settings from arguments.
@@ -267,6 +270,16 @@ def register_tool_handlers(server: Any, tool_handlers: ToolHandlers) -> None:
             # Orphaned resources tool (requires Azure authentication)
             elif name == "find_orphaned_resources":
                 return await tool_handlers.handle_find_orphaned_resources(arguments)
+
+            # Databricks DBU pricing tools
+            elif name == "databricks_dbu_pricing":
+                return await tool_handlers.handle_databricks_dbu_pricing(arguments)
+
+            elif name == "databricks_cost_estimate":
+                return await tool_handlers.handle_databricks_cost_estimate(arguments)
+
+            elif name == "databricks_compare_workloads":
+                return await tool_handlers.handle_databricks_compare_workloads(arguments)
 
             else:
                 return [TextContent(type="text", text=f"Unknown tool: {name}")]
