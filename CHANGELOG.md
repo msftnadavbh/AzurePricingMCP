@@ -5,6 +5,31 @@ All notable changes to the Azure Pricing MCP Server will be documented in this f
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.3.0] - 2026-02-12
+
+### Added
+
+- **PTU Sizing + Cost Planner** (`azure_ptu_sizing` tool)
+  - Estimate required Provisioned Throughput Units (PTUs) for Azure OpenAI / AI Foundry model deployments
+  - Supports 19 models: gpt-5.2, gpt-5.1, gpt-5, gpt-5-mini, gpt-4.1, gpt-4.1-mini, gpt-4.1-nano, o3, o4-mini, gpt-4o, gpt-4o-mini, o3-mini, o1, Llama-3.3-70B-Instruct, DeepSeek-R1, DeepSeek-V3-0324, DeepSeek-R1-0528, and codex variants
+  - Applies official rounding rules (minimum PTUs + scale increments per model and deployment type)
+  - Supports Global, Data Zone, and Regional Provisioned deployment types
+  - Accounts for output token multipliers (e.g., gpt-5: 1 output = 8 input tokens)
+  - Supports cached token deduction (100% deducted from utilization per docs)
+  - Optional live cost estimation via Azure Retail Prices API ($/PTU/hr, monthly projections)
+  - Full calculation transparency: shows intermediate math, rounding rules, and data sources
+  - Includes reservation guidance and benchmarking recommendations
+
+- **PTU Service** (`services/ptu.py`, `services/ptu_models.py`)
+  - `PTUService` class with pure computation methods and async orchestrator
+  - Versioned model data table sourced from official Microsoft PTU documentation
+  - Case-insensitive model lookup with canonical name resolution
+
+### Documentation
+
+- Added `azure_ptu_sizing` tool to TOOLS.md
+- Added PTU Sizing section to FEATURES.md
+
 ## [3.2.0] - 2026-02-10
 
 ### Added

@@ -1,6 +1,6 @@
 # Available Tools
 
-The Azure Pricing MCP Server provides 12 tools for querying Azure pricing information.
+The Azure Pricing MCP Server provides 13 tools for querying Azure pricing information.
 
 ---
 
@@ -43,6 +43,16 @@ These tools require Azure authentication. See [FEATURES.md](FEATURES.md#orphaned
 
 ---
 
+## PTU Sizing + Cost Planner
+
+No authentication required for sizing. Cost lookup uses the public Azure Retail Prices API.
+
+| Tool | Description |
+|------|-------------|
+| `azure_ptu_sizing` | Estimate required PTUs for Azure OpenAI model deployments based on workload shape (RPM, tokens, caching) with optional cost estimation |
+
+---
+
 ## Example Queries
 
 Once configured, ask your AI assistant:
@@ -59,6 +69,8 @@ Once configured, ask your AI assistant:
 | **Spot Eviction** | "What are the eviction rates for D4s_v4 in eastus?" |
 | **Spot History** | "Show me Spot price history for D2s_v4 in westus2" |
 | **Orphaned Resources** | "Find orphaned resources across all my subscriptions" |
+| **PTU Sizing** | "How many PTUs do I need for gpt-4.1 at 100 RPM with 500 input and 200 output tokens?" |
+| **PTU Cost** | "Estimate PTU cost for gpt-5 deployment with 50 RPM, 1000 input tokens, 500 output tokens, include cost for eastus" |
 
 ### Sample Response
 
