@@ -58,7 +58,10 @@ DEPLOYMENT_TYPES: dict[str, dict[str, str]] = {
 #   - gpt-5 family: explicitly documented as 8× (1 output = 8 input tokens)
 #   - gpt-4.1 family: explicitly documented as 4× (1 output = 4 input tokens)
 #   - Llama-3.3-70B-Instruct: explicitly documented as 4× (exception to pricing ratio)
-#   - Older models / others: inferred from pricing ratios where not explicitly stated
+#   - Previous Azure OpenAI models (gpt-4o, gpt-4o-mini): 3× (verified via
+#     Foundry calculator and official MS docs example tables)
+#   - o3-mini, o1: assumed 3× (same "previous model" category; docs say
+#     "older models use a different ratio" without specifying)
 # ---------------------------------------------------------------------------
 
 PTU_MODEL_TABLE: dict[str, dict] = {
@@ -154,7 +157,7 @@ PTU_MODEL_TABLE: dict[str, dict] = {
     # ── Previous Azure OpenAI models ────────────────────────────────────
     "gpt-4o": {
         "input_tpm_per_ptu": 2_500,
-        "output_multiplier": 4,
+        "output_multiplier": 3,  # Verified via Foundry calculator; older model, different ratio
         "global_min_ptus": 15,
         "global_increment": 5,
         "regional_min_ptus": 50,
@@ -162,7 +165,7 @@ PTU_MODEL_TABLE: dict[str, dict] = {
     },
     "gpt-4o-mini": {
         "input_tpm_per_ptu": 37_000,
-        "output_multiplier": 4,
+        "output_multiplier": 3,  # Verified via official MS docs example table (latency page)
         "global_min_ptus": 15,
         "global_increment": 5,
         "regional_min_ptus": 25,
@@ -170,7 +173,7 @@ PTU_MODEL_TABLE: dict[str, dict] = {
     },
     "o3-mini": {
         "input_tpm_per_ptu": 2_500,
-        "output_multiplier": 4,
+        "output_multiplier": 3,  # Previous model; docs: "older models use a different ratio"
         "global_min_ptus": 15,
         "global_increment": 5,
         "regional_min_ptus": 25,
@@ -178,7 +181,7 @@ PTU_MODEL_TABLE: dict[str, dict] = {
     },
     "o1": {
         "input_tpm_per_ptu": 230,
-        "output_multiplier": 4,
+        "output_multiplier": 3,  # Previous model; docs: "older models use a different ratio"
         "global_min_ptus": 15,
         "global_increment": 5,
         "regional_min_ptus": 25,
