@@ -144,14 +144,16 @@ class PTUService:
         self,
         region: str = "eastus",
         currency_code: str = "USD",
+        deployment_type: str = "GlobalProvisioned",
     ) -> dict[str, Any] | None:
         """Fetch PTU hourly pricing from Azure Retail Prices API.
 
-        Searches for Azure OpenAI provisioned throughput meters.
+        Searches for Foundry Models provisioned throughput meters.
 
         Args:
             region: Azure region for pricing.
             currency_code: Currency code.
+            deployment_type: GlobalProvisioned, DataZoneProvisioned, or RegionalProvisioned.
 
         Returns:
             Dict with price_per_ptu_hour and meter info, or None on failure.
@@ -159,11 +161,21 @@ class PTUService:
         if not self._client:
             return None
 
+        # Map deployment type to SKU pattern
+        sku_patterns = {
+            "GlobalProvisioned": "Provisioned Managed Global",
+            "DataZoneProvisioned": "Provisioned Managed Data Zone",
+            "RegionalProvisioned": "Provisioned Managed Regional",
+        }
+        sku_pattern = sku_patterns.get(deployment_type, "Provisioned")
+
         try:
+            # Service is "Foundry Models", product is "Azure OpenAI"
             filters = [
-                "serviceName eq 'Azure OpenAI'",
+                "serviceName eq 'Foundry Models'",
+                "productName eq 'Azure OpenAI'",
                 f"armRegionName eq '{region}'",
-                "contains(meterName, 'Provisioned')",
+                f"contains(skuName, '{sku_pattern}')",
                 "priceType eq 'Consumption'",
             ]
             result = await self._client.fetch_prices(
@@ -172,15 +184,33 @@ class PTUService:
                 limit=20,
             )
             items = result.get("Items", [])
+
             if not items:
-                # Try broader search without region (global pricing)
-                filters_global = [
-                    "serviceName eq 'Azure OpenAI'",
-                    "contains(meterName, 'Provisioned')",
+                # Try without specific SKU pattern
+                filters_broad = [
+                    "serviceName eq 'Foundry Models'",
+                    "productName eq 'Azure OpenAI'",
+                    f"armRegionName eq '{region}'",
+                    "contains(skuName, 'Provisioned')",
                     "priceType eq 'Consumption'",
                 ]
                 result = await self._client.fetch_prices(
-                    filter_conditions=filters_global,
+                    filter_conditions=filters_broad,
+                    currency_code=currency_code,
+                    limit=20,
+                )
+                items = result.get("Items", [])
+
+            if not items:
+                # Try any region for this deployment type
+                filters_any_region = [
+                    "serviceName eq 'Foundry Models'",
+                    "productName eq 'Azure OpenAI'",
+                    f"contains(skuName, '{sku_pattern}')",
+                    "priceType eq 'Consumption'",
+                ]
+                result = await self._client.fetch_prices(
+                    filter_conditions=filters_any_region,
                     currency_code=currency_code,
                     limit=20,
                 )
@@ -327,7 +357,11 @@ class PTUService:
 
         # Optional: cost estimate
         if include_cost:
-            pricing = await self._fetch_ptu_pricing(region=region, currency_code=currency_code)
+            pricing = await self._fetch_ptu_pricing(
+                region=region,
+                currency_code=currency_code,
+                deployment_type=deployment_type,
+            )
             if pricing and pricing["price_per_ptu_hour"] > 0:
                 hourly = pricing["price_per_ptu_hour"] * rounded_ptu
                 result["cost"] = {
