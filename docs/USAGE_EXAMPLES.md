@@ -439,35 +439,35 @@ The tool needs three required inputs: **RPM** (requests per minute), **avg input
 
 #### Option A — Azure CLI (no Log Analytics)
 
-Pull the last 24 hours of metrics from your Azure OpenAI resource:
+Copy-paste this script — it queries the last 7 days and prints your three inputs:
 
 ```bash
-# Set your resource ID
+# Replace {sub}, {rg}, {name} with your values
 RES="/subscriptions/{sub}/resourceGroups/{rg}/providers/Microsoft.CognitiveServices/accounts/{name}"
+START=$(date -u -d "7 days ago" +%Y-%m-%dT%H:%M:%SZ)
+END=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 
-# Total requests (split by model deployment)
-az monitor metrics list --resource $RES \
-  --metric AzureOpenAIRequests --aggregation Total \
-  --interval PT1H --dimension ModelDeploymentName
+REQS=$(az monitor metrics list --resource "$RES" --metric AzureOpenAIRequests \
+  --aggregation Total --interval P7D --start-time "$START" --end-time "$END" \
+  --query "value[0].timeseries[0].data[0].total" -o tsv)
 
-# Total input (prompt) tokens
-az monitor metrics list --resource $RES \
-  --metric ProcessedPromptTokens --aggregation Total --interval PT1H
+INPUT=$(az monitor metrics list --resource "$RES" --metric ProcessedPromptTokens \
+  --aggregation Total --interval P7D --start-time "$START" --end-time "$END" \
+  --query "value[0].timeseries[0].data[0].total" -o tsv)
 
-# Total output (completion) tokens
-az monitor metrics list --resource $RES \
-  --metric GeneratedTokens --aggregation Total --interval PT1H
+OUTPUT=$(az monitor metrics list --resource "$RES" --metric GeneratedTokens \
+  --aggregation Total --interval P7D --start-time "$START" --end-time "$END" \
+  --query "value[0].timeseries[0].data[0].total" -o tsv)
+
+PEAK=$(az monitor metrics list --resource "$RES" --metric AzureOpenAIRequests \
+  --aggregation Total --interval PT1H --start-time "$START" --end-time "$END" \
+  --query "max(value[0].timeseries[0].data[].total)" -o tsv)
+
+echo "=== Your PTU Sizing Inputs ==="
+echo "rpm:               $(echo "$PEAK / 60" | bc)"
+echo "avg_input_tokens:  $(echo "$INPUT / $REQS" | bc)"
+echo "avg_output_tokens: $(echo "$OUTPUT / $REQS" | bc)"
 ```
-
-Then compute your averages:
-
-```
-avg_input_tokens  = total_prompt_tokens / total_requests
-avg_output_tokens = total_completion_tokens / total_requests
-RPM               = peak_hour_requests / 60
-```
-
-> **Tip:** You can also view these metrics visually in **Azure Portal → your OpenAI resource → Monitoring → Metrics**.
 
 #### Option B — KQL (requires Log Analytics)
 
