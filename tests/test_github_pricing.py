@@ -173,6 +173,15 @@ class TestEstimateCost:
         return GitHubPricingService()
 
     @pytest.mark.asyncio
+    async def test_copilot_only_no_plan(self, service):
+        """Copilot-only query should NOT include plan cost."""
+        result = await service.estimate_cost(users=20, copilot_plan="Business")
+        assert result["plan"] is None
+        assert result["monthly_total"] == 380.0  # 20 × $19 Copilot only
+        breakdown_items = [b["item"] for b in result["breakdown"]]
+        assert not any("plan" in item.lower() for item in breakdown_items)
+
+    @pytest.mark.asyncio
     async def test_basic_team_plan(self, service):
         result = await service.estimate_cost(users=10, plan="Team")
         assert result["plan"] == "Team"
@@ -182,6 +191,7 @@ class TestEstimateCost:
 
     @pytest.mark.asyncio
     async def test_with_copilot_business(self, service):
+        """When plan IS explicitly provided alongside copilot, both are included."""
         result = await service.estimate_cost(users=5, plan="Team", copilot_plan="Business")
         # Plan: 5 × $4 = $20, Copilot: 5 × $19 = $95 → total $115
         assert result["monthly_total"] == 115.0
@@ -238,7 +248,7 @@ class TestEstimateCost:
 
     @pytest.mark.asyncio
     async def test_empty_estimate(self, service):
-        result = await service.estimate_cost(users=0, plan="Free")
+        result = await service.estimate_cost(users=0)
         assert result["monthly_total"] == 0.0
 
     @pytest.mark.asyncio
