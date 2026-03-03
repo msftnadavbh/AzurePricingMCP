@@ -5,6 +5,32 @@ All notable changes to the Azure Pricing MCP Server will be documented in this f
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.4.0] - 2026-03-03
+
+### Added
+
+- **Azure Databricks DBU Pricing Tools** (contributed by PR #28)
+  - `databricks_dbu_pricing` - Search and list Azure Databricks DBU rates by workload type, tier, and region
+  - `databricks_cost_estimate` - Estimate monthly and annual Databricks costs based on DBU consumption
+  - `databricks_compare_workloads` - Compare DBU costs across workload types or regions
+  - Supports 14 workload types with fuzzy alias matching (e.g., 'etl' -> 'jobs', 'warehouse' -> 'serverless sql')
+  - Real-time pricing from Azure Retail Prices API — no authentication required
+  - Photon pricing comparison included automatically
+
+### Changed
+
+- **Orphaned Resource Detection** expanded from 5 to 11 resource types (contributed by [@iditbnaya](https://github.com/iditbnaya), PR #30)
+  - Removed NICs and NSGs (no cost impact — not billable resources)
+  - Added: SQL Elastic Pools, Application Gateways, NAT Gateways, Load Balancers, Private DNS Zones, Private Endpoints, Virtual Network Gateways, DDoS Protection Plans
+  - Fixed SQL Elastic Pools query to correctly filter for pools with no databases (leftanti join)
+  - Fixed Private Endpoints query to check both auto-approved and manual-approval connections
+  - Updated all documentation (FEATURES.md, ORPHANED_RESOURCES.md, TOOLS.md, USAGE_EXAMPLES.md)
+
+### Documentation
+
+- Added Databricks DBU pricing tools to TOOLS.md
+- Updated orphaned resource documentation across all docs
+
 ## [3.3.0] - 2026-02-12
 
 ### Added
@@ -36,7 +62,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Orphaned Resource Detection Tool** (contributed by [@iditbnaya](https://github.com/iditbnaya))
   - `find_orphaned_resources` - Detect orphaned Azure resources and compute wasted costs
-  - Scans for unattached managed disks, orphaned NICs, public IPs, NSGs, and empty App Service Plans
+  - Initial release: scans for unattached managed disks, orphaned NICs, public IPs, NSGs, and empty App Service Plans
   - Integrates with Azure Cost Management API for historical cost lookup
   - Groups results by resource type with per-type summary tables
   - Configurable lookback period (default: 60 days)

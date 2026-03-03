@@ -645,7 +645,8 @@ def format_orphaned_resources_response(result: dict[str, Any]) -> str:
             f"Scanned {len(subscriptions)} subscription(s) — "
             "no orphaned disks, public IPs, App Service Plans, SQL Elastic Pools, "
             "Application Gateways, NAT Gateways, Load Balancers, Private DNS Zones, "
-            "Private Endpoints, Virtual Network Gateways, or DDoS Protection Plans detected."
+            "Private Endpoints, Virtual Network Gateways, "
+            "or DDoS Protection Plans detected."
         )
 
     # Collect all orphaned resources across subscriptions
@@ -697,9 +698,9 @@ def format_orphaned_resources_response(result: dict[str, Any]) -> str:
     return "\n".join(response_lines)
 
 
-# ---------------------------------------------------------------------------
+# =============================================================================
 # PTU Sizing + Cost Planner
-# ---------------------------------------------------------------------------
+# =============================================================================
 
 
 def format_ptu_sizing_response(result: dict[str, Any]) -> str:

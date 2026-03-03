@@ -69,9 +69,17 @@ Resources
 """
 
 # Resource Graph query for orphaned SQL Elastic Pools (no databases)
+# Uses leftanti join: keep only pools that have NO matching database.
 ORPHANED_SQL_ELASTIC_POOLS_QUERY = """
 Resources
 | where type =~ 'microsoft.sql/servers/elasticpools'
+| extend poolId = tolower(id)
+| join kind=leftanti (
+    Resources
+    | where type =~ 'microsoft.sql/servers/databases'
+    | where isnotempty(properties.elasticPoolId)
+    | extend poolId = tolower(properties.elasticPoolId)
+) on poolId
 | project id, name, type, location, resourceGroup,
     subscriptionId,
     sku = tostring(sku.name),
@@ -123,12 +131,18 @@ Resources
 """
 
 # Resource Graph query for orphaned Private Endpoints (no connections or not approved)
+# Checks both auto-approved (privateLinkServiceConnections) and manual-approval
+# (manualPrivateLinkServiceConnections) arrays to avoid false positives.
 ORPHANED_PRIVATE_ENDPOINTS_QUERY = """
 Resources
 | where type =~ 'microsoft.network/privateendpoints'
-| where isnull(properties.privateLinkServiceConnections)
-    or array_length(properties.privateLinkServiceConnections) == 0
-    or properties.privateLinkServiceConnections[0].properties.privateLinkServiceConnectionState.status != 'Approved'
+| extend autoConns  = array_length(properties.privateLinkServiceConnections)
+| extend manualConns = array_length(properties.manualPrivateLinkServiceConnections)
+| extend autoStatus  = tostring(properties.privateLinkServiceConnections[0].properties.privateLinkServiceConnectionState.status)
+| extend manualStatus = tostring(properties.manualPrivateLinkServiceConnections[0].properties.privateLinkServiceConnectionState.status)
+| where (isnull(autoConns) or autoConns == 0) and (isnull(manualConns) or manualConns == 0)
+    or ((isnull(autoConns) or autoConns == 0 or autoStatus != 'Approved')
+        and (isnull(manualConns) or manualConns == 0 or manualStatus != 'Approved'))
 | project id, name, type, location, resourceGroup,
     subscriptionId
 """
