@@ -8,7 +8,6 @@ from azure_pricing_mcp.config import (
     GITHUB_COPILOT_PLANS,
     GITHUB_PLANS,
     GITHUB_PRICING_DATA_VERSION,
-    GITHUB_PRODUCT_ALIASES,
     GITHUB_SECURITY_PRODUCTS,
 )
 from azure_pricing_mcp.github_pricing.formatters import (

@@ -343,7 +343,7 @@ class GitHubPricingService:
             )
         return {
             "runners": runners,
-            "free_minutes": {plan: info for plan, info in GITHUB_ACTIONS_FREE_MINUTES.items()},
+            "free_minutes": dict(GITHUB_ACTIONS_FREE_MINUTES.items()),
             "multipliers": {
                 "Linux": 1,
                 "Windows": 2,

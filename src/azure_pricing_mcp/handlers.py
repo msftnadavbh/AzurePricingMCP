@@ -7,7 +7,6 @@ from mcp.types import TextContent
 
 from .config import DEFAULT_CUSTOMER_DISCOUNT
 from .databricks.handlers import DatabricksHandlers
-from .github_pricing.handlers import GitHubPricingHandlers
 from .formatters import (
     _get_discount_tip,
     format_cost_estimate_response,
@@ -24,6 +23,7 @@ from .formatters import (
     format_spot_eviction_rates_response,
     format_spot_price_history_response,
 )
+from .github_pricing.handlers import GitHubPricingHandlers
 from .services import DatabricksService, PricingService, PTUService, SKUService, SpotService
 from .services.orphaned import OrphanedResourcesService
 
