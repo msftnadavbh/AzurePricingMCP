@@ -44,6 +44,8 @@ Then configure your AI assistant. See [Integrations](#-integrations).
 - **Spot VM Intelligence** - Eviction rates and price history (requires Azure auth)
 - **Orphaned Resources** - Detect unused resources with real cost calculation (requires Azure auth)
 - **PTU Sizing** - Estimate Provisioned Throughput Units for Azure OpenAI deployments
+- **Databricks DBU Pricing** - Search DBU rates, estimate costs, compare workloads
+- **GitHub Pricing** - Full GitHub pricing catalog + cost estimation (Plans, Copilot, Actions, Security)
 
 📖 **[Full feature details →](docs/FEATURES.md)**
 
@@ -51,7 +53,7 @@ Then configure your AI assistant. See [Integrations](#-integrations).
 
 ## 🛠️ Tools
 
-13 tools available for AI assistants:
+18 tools available for AI assistants:
 
 - `azure_price_search` - Search retail prices
 - `azure_price_compare` - Compare across regions/SKUs
@@ -59,9 +61,12 @@ Then configure your AI assistant. See [Integrations](#-integrations).
 - `azure_cost_estimate` - Usage-based cost estimation
 - `azure_region_recommend` - Find cheapest regions
 - `azure_discover_skus` / `azure_sku_discovery` - SKU lookup
+- `get_customer_discount` - Customer discount information
 - `spot_eviction_rates` / `spot_price_history` / `simulate_eviction` - Spot VM tools
 - `find_orphaned_resources` - Detect orphaned resources with cost analysis
 - `azure_ptu_sizing` - Estimate PTUs for Azure OpenAI deployments
+- `databricks_dbu_pricing` / `databricks_cost_estimate` / `databricks_compare_workloads` - Databricks DBU pricing
+- `github_pricing` / `github_cost_estimate` - GitHub pricing catalog and cost estimation
 
 📖 **[Tool documentation →](docs/TOOLS.md)**
 
@@ -103,10 +108,16 @@ AzurePricingMCP/
 │   ├── server.py             # MCP server
 │   ├── handlers.py           # Tool handlers
 │   ├── client.py             # Azure API client
-│   └── services/             # Business logic
-├── tests/                    # Test suite
+│   ├── config.py             # Pricing data & constants
+│   ├── tools.py              # Core tool definitions
+│   ├── formatters.py         # Response formatters
+│   ├── models.py             # Data models
+│   ├── services/             # Business logic
+│   ├── databricks/           # Databricks DBU tools
+│   └── github_pricing/       # GitHub pricing tools
+├── tests/                    # Test suite (9 files, 236+ tests)
 ├── docs/                     # Documentation
-└── scripts/                  # Setup scripts
+└── scripts/                  # Setup & debug scripts
 ```
 
 📖 **[Detailed structure →](docs/PROJECT_STRUCTURE.md)**
@@ -127,34 +138,7 @@ https://prices.azure.com/api/retail/prices
 
 ## 🤝 Contributing
 
-We welcome contributions!
-
-### Quick Start
-
-```bash
-git clone https://github.com/YOUR_USERNAME/AzurePricingMCP.git
-cd AzurePricingMCP
-python -m venv .venv && source .venv/bin/activate
-pip install -e ".[dev]"
-pytest tests/
-```
-
-### Guidelines
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit changes (`git commit -m 'Add amazing feature'`)
-4. Push to branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-### Code Style
-
-- Follow PEP 8
-- Add type hints
-- Include docstrings
-- Run `black`, `ruff`, and `mypy` before submitting
-
-📖 **[Full contribution guide →](CONTRIBUTING.md)**
+We welcome contributions! See **[CONTRIBUTING.md](CONTRIBUTING.md)** for setup instructions, code style, and PR process.
 
 ---
 
@@ -182,7 +166,7 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 - **Original Author**: [@charris-msft](https://github.com/charris-msft)
 - **Current Maintainer**: [@msftnadavbh](https://github.com/msftnadavbh)
-- **Contributors**: [@notoriousmic](https://github.com/notoriousmic), [@iditbnaya](https://github.com/iditbnaya)
+- **Contributors**: [@notoriousmic](https://github.com/notoriousmic), [@iditbnaya](https://github.com/iditbnaya), [@roy2392](https://github.com/roy2392)
 - [Model Context Protocol](https://modelcontextprotocol.io/)
 - [Azure Retail Prices API](https://learn.microsoft.com/en-us/rest/api/cost-management/retail-prices/azure-retail-prices)
 

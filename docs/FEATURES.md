@@ -19,6 +19,7 @@ The Azure Pricing MCP Server provides comprehensive Azure pricing intelligence t
 | 📊 **Real-time Data** | Live data from Azure Retail Prices API |
 | 🏷️ **Customer Discounts** | Apply discount percentages to all pricing queries |
 | ⚡ **PTU Sizing** | Estimate Provisioned Throughput Units for Azure OpenAI deployments |
+| 🧱 **Databricks DBU Pricing** | Search DBU rates, estimate costs, compare workloads across regions |
 | 🐙 **GitHub Pricing** | Full GitHub pricing catalog + cost estimation (Plans, Copilot, Actions, Security, Codespaces) |
 
 ---
@@ -167,6 +168,35 @@ PTU sizing calculations are purely offline. Optional cost lookup uses the public
 
 ---
 
+## Databricks DBU Pricing Tools
+
+Search, estimate, and compare Azure Databricks DBU pricing — no authentication required.
+
+### Capabilities
+
+| Feature | Description |
+|---------|-------------|
+| **DBU rate lookup** | Search DBU rates by workload type, tier, and region |
+| **14 workload types** | All-Purpose, Jobs, Jobs Light, SQL Pro, Serverless SQL, Delta Live Tables, Model Training, and more |
+| **Fuzzy aliases** | Natural names like `etl`, `notebook`, `warehouse` map to official workload types |
+| **Cost estimation** | Monthly/annual costs from DBU rate × workers × hours |
+| **Workload comparison** | Compare DBU costs across workload types and regions side-by-side |
+| **Photon pricing** | Photon-enabled SKU pricing included automatically |
+
+### No Authentication Required
+
+DBU pricing is fetched from the public Azure Retail Prices API. No Azure credentials needed.
+
+### Example Usage
+
+```
+"What are the Databricks DBU rates for jobs workload in Premium tier?"
+"Estimate monthly cost for a Databricks all-purpose cluster with 4 workers, 0.75 DBU each, 10 hrs/day"
+"Compare Databricks costs between all-purpose, jobs, and serverless sql in East US and West Europe"
+```
+
+---
+
 ## GitHub Pricing Tools
 
 Full GitHub product pricing catalog and cost estimation — no authentication required.
@@ -186,6 +216,8 @@ Full GitHub product pricing catalog and cost estimation — no authentication re
 ### No Authentication Required
 
 GitHub pricing data is maintained as a static table verified against github.com/pricing. All lookups are offline — no API calls required.
+
+> **Note:** These tools cover **GitHub Copilot** (AI coding assistant) only — not Microsoft 365 Copilot. For M365 Copilot pricing, use `azure_price_search`.
 
 ### Example Usage
 

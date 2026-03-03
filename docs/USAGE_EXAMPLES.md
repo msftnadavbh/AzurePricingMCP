@@ -25,6 +25,8 @@ Copy these queries directly or adapt them to your needs.
 - [Spot VM Tools](#spot-vm-tools)
 - [Orphaned Resource Detection](#orphaned-resource-detection)
 - [PTU Sizing](#ptu-sizing)
+- [Databricks DBU Pricing](#databricks-dbu-pricing)
+- [GitHub Pricing](#github-pricing)
 
 **Discovery & Reference**
 - [SKU Discovery](#sku-discovery)
@@ -589,6 +591,130 @@ Uses `include_cost=true` to fetch live $/PTU/hr pricing.
 | **GlobalProvisioned** | Any Azure geography | Lowest minimums |
 | **DataZoneProvisioned** | Within data zone (EU, US) | Same as Global |
 | **RegionalProvisioned** | Single region | Higher minimums |
+
+---
+
+## Databricks DBU Pricing
+
+Query Azure Databricks DBU rates and estimate costs. Uses `databricks_dbu_pricing`, `databricks_cost_estimate`, and `databricks_compare_workloads` tools.
+
+**No authentication required** — pricing comes from the Azure Retail Prices API.
+
+### Look Up DBU Rates
+
+**Query:** "What are the Databricks DBU rates for jobs workload in Premium tier?"
+
+**Response:**
+```
+Azure Databricks DBU Pricing — East US (USD)
+
+Jobs (Premium): $0.30/DBU-hour
+Jobs (Standard): $0.20/DBU-hour
+Jobs Light (Premium): $0.22/DBU-hour
+```
+
+### Estimate Databricks Costs
+
+**Query:** "Estimate monthly cost for a Databricks all-purpose cluster with 4 workers, 0.75 DBU each, running 10 hours a day, 22 days a month"
+
+Uses `databricks_cost_estimate` with `workload_type="all-purpose"`, `dbu_count=0.75`, `num_workers=4`, `hours_per_day=10`, `days_per_month=22`.
+
+**Response:**
+```
+Databricks Cost Estimate — All-Purpose (Premium)
+
+Region: East US
+DBU Rate: $0.55/DBU-hour
+Workers: 4 × 0.75 DBU = 3.00 DBU/hour
+Usage: 10 hrs/day × 22 days = 220 hrs/month
+
+Monthly: $363.00
+Annual:  $4,356.00
+
+Note: VM compute, storage, and networking billed separately.
+```
+
+### Compare Workload Types
+
+**Query:** "Compare Databricks costs between all-purpose, jobs, and serverless sql workloads in East US and West Europe"
+
+Uses `databricks_compare_workloads` with `workload_types=["all-purpose", "jobs", "serverless sql"]` and `regions=["eastus", "westeurope"]`.
+
+### Supported Workload Types
+
+| Workload | Aliases |
+|----------|---------|
+| `all-purpose` | `notebook`, `interactive` |
+| `jobs` | `etl`, `batch` |
+| `jobs light` | `light` |
+| `sql pro` | `sql`, `bi` |
+| `serverless sql` | `warehouse`, `sql serverless` |
+| `delta live tables pro` | `dlt`, `pipelines` |
+| `model training` | `ml`, `training` |
+| `automated serverless` | `serverless` |
+
+---
+
+## GitHub Pricing
+
+Look up GitHub product pricing and estimate team costs. Uses `github_pricing` and `github_cost_estimate` tools.
+
+**No authentication required** — data sourced from static pricing tables verified against github.com/pricing.
+
+> **Note:** These tools cover **GitHub Copilot** (AI coding assistant) only — not Microsoft 365 Copilot. For M365 Copilot pricing, use `azure_price_search`.
+
+### Look Up Product Pricing
+
+**Query:** "What are the GitHub Copilot pricing plans?"
+
+**Response:**
+```
+## GitHub Copilot Pricing
+
+| Plan | Price | Billing |
+|------|-------|---------|
+| Free | $0 | Free |
+| Pro | $10/month | Per user |
+| Pro+ | $39/month | Per user |
+| Business | $19/month | Per user |
+| Enterprise | $39/month | Per user |
+```
+
+### GitHub Actions Pricing
+
+**Query:** "How much does GitHub Actions cost for macOS runners?"
+
+Uses `github_pricing` with `product="actions"`.
+
+### Estimate Team Costs
+
+**Query:** "Estimate monthly GitHub cost for 50 users on Team plan with Copilot Business and 10,000 Actions minutes"
+
+Uses `github_cost_estimate` with `users=50`, `plan="Team"`, `copilot_plan="Business"`, `actions_minutes=10000`.
+
+**Response:**
+```
+## GitHub Cost Estimate — 50 users
+
+| Line Item | Monthly | Annual |
+|-----------|---------|--------|
+| Team plan (50 seats) | $200.00 | $2,400.00 |
+| Copilot Business (50 licenses) | $950.00 | $11,400.00 |
+| Actions (10,000 min @ Linux 2-core) | $80.00 | $960.00 |
+| **Total** | **$1,230.00** | **$14,760.00** |
+```
+
+### Copilot-Only Estimate
+
+**Query:** "How much would 20 Copilot Business licenses cost?"
+
+Uses `github_cost_estimate` with `users=20`, `copilot_plan="Business"` (no `plan` parameter — excludes plan seat costs).
+
+### Advanced Security Pricing
+
+**Query:** "Show me GitHub Advanced Security pricing for 100 active committers"
+
+Uses `github_cost_estimate` with `ghas_committers=100`.
 
 ---
 

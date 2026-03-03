@@ -1,6 +1,6 @@
 # Available Tools
 
-The Azure Pricing MCP Server provides 15 tools for querying Azure pricing information.
+The Azure Pricing MCP Server provides 18 tools for querying Azure, Databricks, and GitHub pricing.
 
 ---
 
@@ -17,7 +17,7 @@ These tools work without authentication using the public Azure Retail Prices API
 | `azure_region_recommend` | Find the cheapest Azure regions for any SKU with savings percentages |
 | `azure_discover_skus` | List available SKUs for a specific Azure service |
 | `azure_sku_discovery` | Intelligent SKU discovery with fuzzy name matching ("vm" → "Virtual Machines") |
-| `get_customer_discount` | Get customer discount information |
+| `get_customer_discount` | Get customer discount information (default: 10%) |
 
 ---
 
@@ -41,6 +41,13 @@ These tools require Azure authentication. See [FEATURES.md](FEATURES.md#orphaned
 |------|-------------|
 | `find_orphaned_resources` | Detect orphaned resources (unattached disks, public IPs, empty App Service Plans, SQL Elastic Pools, Application Gateways, NAT Gateways, Load Balancers, Private DNS Zones, Private Endpoints, Virtual Network Gateways, DDoS Protection Plans) and compute wasted cost |
 
+### Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `days` | integer | No | Cost lookback period in days (default: 60) |
+| `all_subscriptions` | boolean | No | Scan all accessible subscriptions (default: true) |
+
 ---
 
 ## PTU Sizing + Cost Planner
@@ -51,7 +58,64 @@ No authentication required for sizing. Cost lookup uses the public Azure Retail 
 |------|-------------|
 | `azure_ptu_sizing` | Estimate required PTUs for Azure OpenAI model deployments based on workload shape (RPM, tokens, caching) with optional cost estimation |
 
+### Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `model` | string | Yes | Model name (e.g., `gpt-4o`, `gpt-4.1`, `gpt-5`, `o4-mini`) |
+| `rpm` | integer | Yes | Requests per minute |
+| `avg_input_tokens` | integer | Yes | Average input tokens per request |
+| `avg_output_tokens` | integer | Yes | Average output tokens per request |
+| `avg_cached_tokens` | integer | No | Average cached tokens per request (default: 0) |
+| `deployment_type` | string | No | `GlobalProvisioned`, `DataZoneProvisioned`, or `RegionalProvisioned` |
+| `include_cost` | boolean | No | Fetch live $/PTU/hr pricing (default: false) |
+| `region` | string | No | Azure region for cost lookup (default: eastus) |
+
 > 📖 **Need help finding your RPM and token counts?** See [PTU Sizing → Getting Your Input Data](USAGE_EXAMPLES.md#getting-your-input-data) for Azure CLI commands, KQL queries, and estimation tables.
+
+---
+
+## Databricks DBU Pricing Tools
+
+No authentication required. Real-time pricing from the Azure Retail Prices API.
+
+| Tool | Description |
+|------|-------------|
+| `databricks_dbu_pricing` | Search and list Azure Databricks DBU rates by workload type, tier, and region |
+| `databricks_cost_estimate` | Estimate monthly and annual Databricks costs based on DBU consumption |
+| `databricks_compare_workloads` | Compare DBU costs across workload types or regions |
+
+### `databricks_dbu_pricing` Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `workload_type` | string | No | Workload filter (e.g., `all-purpose`, `jobs`, `sql pro`, `serverless sql`). Supports aliases like `etl`, `notebook`, `warehouse`. |
+| `tier` | string | No | `Premium` or `Standard`. If omitted, returns both. |
+| `region` | string | No | Azure region (default: `eastus`) |
+| `currency_code` | string | No | Currency code (default: `USD`) |
+
+### `databricks_cost_estimate` Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `workload_type` | string | Yes | Type of Databricks workload |
+| `dbu_count` | number | Yes | DBUs per worker per hour (depends on VM instance type) |
+| `hours_per_day` | number | No | Hours of usage per day (default: 8) |
+| `days_per_month` | integer | No | Working days per month (default: 22) |
+| `tier` | string | No | `Premium` or `Standard` (default: `Premium`) |
+| `region` | string | No | Azure region (default: `eastus`) |
+| `num_workers` | integer | No | Number of worker nodes (default: 1) |
+| `discount_percentage` | number | No | Discount percentage (e.g., 10 for 10%) |
+
+### `databricks_compare_workloads` Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `workload_types` | array | No | List of workload types to compare. If omitted, compares common types. |
+| `regions` | array | No | List of regions to compare (default: `[eastus]`) |
+| `tier` | string | No | `Premium` or `Standard` (default: `Premium`) |
+| `dbu_count` | number | No | DBU count per worker for monthly cost projection |
+| `hours_per_month` | number | No | Hours per month for cost projection (default: 730 if `dbu_count` provided) |
 
 ---
 
@@ -59,10 +123,34 @@ No authentication required for sizing. Cost lookup uses the public Azure Retail 
 
 No authentication required. Data sourced from static pricing tables verified against github.com/pricing.
 
+> **Note:** These tools cover **GitHub Copilot** (AI coding assistant) only — not Microsoft 365 Copilot. For M365 Copilot pricing, use `azure_price_search`.
+
 | Tool | Description |
 |------|-------------|
 | `github_pricing` | Look up GitHub product pricing: Plans (Free/Team/Enterprise), Copilot (Free/Pro/Pro+/Business/Enterprise), Actions runners, Advanced Security, Codespaces, Git LFS, and Packages |
 | `github_cost_estimate` | Estimate monthly and annual GitHub costs based on team size and usage (plan seats, Copilot licenses, Actions minutes, Codespaces hours, LFS packs, GHAS committers) |
+
+### `github_pricing` Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `product` | string | No | Product category: `copilot`, `actions`, `plans`, `security`, `codespaces`, `storage`. Omit for full catalog. |
+| `copilot_plan` | string | No | Copilot plan filter: `Free`, `Pro`, `Pro+`, `Business`, `Enterprise` |
+
+### `github_cost_estimate` Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `users` | integer | No | Number of user seats (default: 1) |
+| `plan` | string | No | GitHub plan: `Free`, `Team`, or `Enterprise`. Omit to exclude plan costs. |
+| `copilot_plan` | string | No | Copilot plan: `Free`, `Pro`, `Pro+`, `Business`, `Enterprise` |
+| `actions_minutes` | integer | No | Total Actions minutes per month (default: 0) |
+| `actions_runner` | string | No | Runner label (e.g., `Linux 2-core`, `Windows 4-core`, `macOS 3-core (M1)`) |
+| `codespaces_hours` | number | No | Total Codespaces hours per month (default: 0) |
+| `codespaces_cores` | integer | No | Cores per Codespace instance (default: 4) |
+| `codespaces_storage_gb` | number | No | Codespaces persistent storage in GB (default: 0) |
+| `lfs_packs` | integer | No | Number of 50 GB Git LFS data packs (default: 0) |
+| `ghas_committers` | integer | No | Active committers for GitHub Advanced Security (default: 0) |
 
 ---
 
@@ -73,28 +161,15 @@ Once configured, ask your AI assistant:
 | Query Type | Example |
 |------------|---------|
 | **Basic Pricing** | "What's the price of a D4s_v3 VM in West US 2?" |
-| **Multi-Node** | "Price for 20 Standard_D32s_v6 nodes in East US 2" |
 | **Comparison** | "Compare VM prices between East US and West Europe" |
 | **Cost Estimate** | "Estimate monthly cost for D8s_v5 running 12 hours/day" |
 | **SKU Discovery** | "What App Service plans are available?" |
-| **Savings Plans** | "Show savings plan options for virtual machines" |
-| **Storage** | "What are the blob storage pricing tiers?" |
 | **Spot Eviction** | "What are the eviction rates for D4s_v4 in eastus?" |
-| **Spot History** | "Show me Spot price history for D2s_v4 in westus2" |
 | **Orphaned Resources** | "Find orphaned resources across all my subscriptions" |
 | **PTU Sizing** | "How many PTUs do I need for gpt-4.1 at 100 RPM with 500 input and 200 output tokens?" |
-| **PTU Cost** | "Estimate PTU cost for gpt-5 deployment with 50 RPM, 1000 input tokens, 500 output tokens, include cost for eastus" |
+| **Databricks** | "What are the Databricks DBU rates for jobs workload in Premium tier?" |
 | **GitHub Pricing** | "What are the GitHub Copilot plan prices?" |
-| **GitHub Cost** | "Estimate monthly GitHub cost for 50 users on Team plan with Copilot Business and 10,000 Actions minutes" |
-
-### Sample Response
-
-```
-Standard_D32s_v6 in East US 2:
-- Linux On-Demand: $1.613/hour → $23,550/month for 20 nodes
-- 1-Year Savings:  $1.113/hour → $16,250/month (31% savings)
-- 3-Year Savings:  $0.742/hour → $10,833/month (54% savings)
-```
+| **GitHub Cost** | "Estimate monthly GitHub cost for 50 users on Team plan with Copilot Business" |
 
 ---
 

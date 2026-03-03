@@ -174,7 +174,6 @@ Here are some areas where we'd love contributions:
 - [ ] More comprehensive test coverage
 - [ ] Performance optimizations
 - [ ] Caching mechanisms
-- [ ] Additional pricing tools (e.g., Reserved Instances)
 - [ ] Support for more currencies
 - [ ] Documentation improvements
 - [ ] Example integrations
