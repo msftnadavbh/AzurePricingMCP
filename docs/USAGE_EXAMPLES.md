@@ -373,7 +373,7 @@ Subscriptions scanned: 3
 |---------------|-------|-----------|
 | Unattached Disk | 2 | $85.00 |
 | Orphaned Public IP | 2 | $42.50 |
-| Orphaned NSG | 1 | $0.00 |
+| Orphaned Load Balancer | 1 | $18.25 |
 ```
 
 ### Custom Lookback Period
@@ -395,10 +395,16 @@ The tool detects these orphaned resource types:
 | Resource Type | Detection Criteria |
 |---------------|--------------------|
 | **Unattached Disk** | Managed disks with no `managedBy` reference |
-| **Orphaned NIC** | Network interfaces not attached to a VM or private endpoint |
 | **Orphaned Public IP** | Public IPs not associated with any resource |
-| **Orphaned NSG** | Network security groups not attached to any NIC or subnet |
 | **Empty App Service Plan** | App Service Plans with zero hosted apps |
+| **Orphaned SQL Elastic Pool** | SQL Elastic Pools with no databases in the pool |
+| **Orphaned Application Gateway** | Application gateways with no backend address pools or targets |
+| **Orphaned NAT Gateway** | NAT gateways not associated with any subnet |
+| **Orphaned Load Balancer** | Load balancers with no backend address pools |
+| **Orphaned Private DNS Zone** | Private DNS zones with no virtual network links |
+| **Orphaned Private Endpoint** | Private endpoints with no connections or unapproved connections |
+| **Orphaned Virtual Network Gateway** | Virtual network gateways with no IP configurations |
+| **Orphaned DDoS Protection Plan** | DDoS protection plans with no associated virtual networks |
 
 ### Cost Analysis
 
