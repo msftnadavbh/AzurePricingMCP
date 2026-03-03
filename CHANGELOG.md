@@ -5,6 +5,31 @@ All notable changes to the Azure Pricing MCP Server will be documented in this f
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.0.0] - 2026-03-03
+
+### Changed
+
+- **Documentation overhaul** — comprehensive review and update of all markdown files
+  - Fixed tool count across all docs (was 6/13/15 in different files → now consistently 18)
+  - Added Databricks DBU pricing tools to TOOLS.md, USAGE_EXAMPLES.md, FEATURES.md, and README.md (were missing from all four despite being added in v3.4.0)
+  - Added GitHub pricing examples to USAGE_EXAMPLES.md
+  - Added full parameter documentation to TOOLS.md for all 18 tools
+  - Rewrote PROJECT_STRUCTURE.md to reflect current architecture (was stuck at ~v3.0.0)
+  - Fixed 8 broken links (references to deleted QUICK_START.md, nonexistent DOCKER.md, wrong relative paths)
+  - Added Copilot disambiguation note (GitHub Copilot vs Microsoft 365 Copilot) to FEATURES.md and TOOLS.md
+  - Updated DEVELOPMENT.md "Adding a New Tool" guide to reflect service → handler → formatter → tool pattern
+  - Fixed stale version references and removed outdated setup.py reference in DEVELOPMENT.md
+  - Removed stale "Reserved Instances" item from CONTRIBUTING.md (already implemented)
+  - Simplified README.md contributing section (removed duplication with CONTRIBUTING.md)
+  - Updated INSTALL.md auth note to include Orphaned Resources (not just Spot VMs)
+  - Fixed SETUP_CHECKLIST.md tool count and resource links
+
+- **Version bump to 4.0.0** — major documentation restructuring
+
+### Added
+
+- Added [@roy2392](https://github.com/roy2392) as a contributor
+
 ## [3.5.0] - 2026-03-03
 
 ### Added

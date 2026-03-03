@@ -12,7 +12,7 @@ pip install -e .
 
 Then restart the MCP server (VS Code: reload window, Claude Desktop: restart app).
 
-> **Note:** v3.1.0+ includes Spot VM tools that require Azure authentication. Run `az login` to use them.
+> **Note:** v3.1.0+ includes Spot VM and Orphaned Resource tools that require Azure authentication. Run `az login` to use them.
 
 ---
 
@@ -208,6 +208,5 @@ python --version
 ## Next Steps
 
 - See [README.md](README.md) for full documentation
-- See [QUICK_START.md](QUICK_START.md) for usage guide
-- See [USAGE_EXAMPLES.md](USAGE_EXAMPLES.md) for example queries
+- See [docs/USAGE_EXAMPLES.md](docs/USAGE_EXAMPLES.md) for example queries
 - Run tests: `pytest tests/`

@@ -32,7 +32,7 @@ Use this checklist to ensure everything is configured correctly.
 
 **For both:**
 - [ ] Restarted MCP server from Command Palette (MCP: List Servers → Restart)
-- [ ] Verified 6 tools are loaded in MCP server list
+- [ ] Verified 18 tools are loaded in MCP server list
 
 ## OR Claude Desktop Configuration
 
@@ -78,7 +78,12 @@ Try these example queries:
 - "Compare VM prices between East US and West Europe"
 - "Estimate monthly cost for D8s_v5 running 12 hours per day"
 - "What App Service plans are available?"
-- "Show me GPU VM pricing"
+
+## Resources
+
+- [README.md](../README.md)
+- [USAGE_EXAMPLES.md](USAGE_EXAMPLES.md)
+- [INSTALL.md](../INSTALL.md)
 
 ## Need Help?
 

@@ -1,216 +1,145 @@
 # Azure Pricing MCP - Project Structure
 
-This document explains the new project structure following Python best practices.
+This document describes the project layout following Python src-layout best practices.
 
 ## Directory Structure
 
 ```
 AzurePricingMCP/
 ├── src/
-│   └── azure_pricing_mcp/          # Main package
-│       ├── __init__.py             # Package initialization
-│       ├── __main__.py             # Module entry point
-│       ├── server.py               # Main MCP server implementation
-│       ├── handlers.py             # Tool call handlers
-│       ├── client.py               # Azure Pricing API client
-│       ├── auth.py                 # Azure AD authentication (for Spot tools)
-│       ├── config.py               # Configuration constants
-│       ├── formatters.py           # Response formatting utilities
-│       ├── models.py               # Data models and types
-│       ├── tools.py                # Tool definitions
-│       └── services/               # Business logic services
+│   └── azure_pricing_mcp/              # Main package
+│       ├── __init__.py                 # Package exports and version
+│       ├── __main__.py                 # Module entry point
+│       ├── server.py                   # MCP server, routing, lifecycle
+│       ├── handlers.py                 # Main tool handler (extends mixins)
+│       ├── client.py                   # Azure Pricing API HTTP client
+│       ├── auth.py                     # Azure AD authentication
+│       ├── config.py                   # Pricing data & configuration constants
+│       ├── formatters.py              # Core response formatters
+│       ├── models.py                  # Data models and types
+│       ├── tools.py                   # Core MCP tool definitions
+│       │
+│       ├── services/                  # Business logic layer
+│       │   ├── __init__.py
+│       │   ├── pricing.py            # Price search, comparison, estimation
+│       │   ├── retirement.py         # VM SKU retirement tracking
+│       │   ├── sku.py                # SKU discovery and fuzzy matching
+│       │   ├── spot.py               # Spot VM eviction rates & pricing
+│       │   ├── orphaned.py           # Orphaned resource service wrapper
+│       │   ├── orphaned_resources.py  # Orphaned resource scanner (11 types)
+│       │   ├── ptu.py                # PTU sizing service
+│       │   ├── ptu_models.py         # PTU model data tables
+│       │   ├── databricks.py         # Databricks DBU pricing service
+│       │   └── github_pricing.py     # GitHub pricing service
+│       │
+│       ├── databricks/               # Databricks DBU pricing tools
+│       │   ├── __init__.py
+│       │   ├── formatters.py         # Databricks response formatters
+│       │   ├── handlers.py           # Databricks handler mixin
+│       │   └── tools.py              # Databricks tool definitions
+│       │
+│       └── github_pricing/           # GitHub pricing tools
 │           ├── __init__.py
-│           ├── pricing.py          # Pricing service
-│           ├── retirement.py       # VM retirement tracking
-│           ├── sku.py              # SKU discovery service
-│           └── spot.py             # Spot VM eviction & pricing (requires auth)
+│           ├── formatters.py         # GitHub pricing response formatters
+│           ├── handlers.py           # GitHub pricing handler mixin
+│           └── tools.py              # GitHub pricing tool definitions
 │
-├── tests/                          # Test files
-│   ├── test_azure_pricing.py
-│   ├── test_http_transport.py
-│   ├── test_integration.py
-│   ├── test_mcp_server.py
-│   └── test_ri_pricing.py
+├── tests/                             # Test suite
+│   ├── test_azure_pricing.py         # Core pricing tests
+│   ├── test_databricks.py           # Databricks tools tests
+│   ├── test_github_pricing.py       # GitHub pricing tests
+│   ├── test_http_transport.py       # HTTP transport tests
+│   ├── test_integration.py          # Integration tests
+│   ├── test_mcp_server.py           # MCP server tests
+│   ├── test_orphaned_resources.py   # Orphaned resource tests
+│   ├── test_ptu_sizing.py          # PTU sizing tests
+│   └── test_ri_pricing.py          # Reserved Instance tests
 │
-├── scripts/                        # Utility scripts
-│   ├── install.py                 # Installation script
-│   ├── run_server.py              # Server runner
-│   ├── setup.ps1                  # PowerShell setup
-│   ├── docker-build.sh            # Docker build script (Linux/Mac)
-│   ├── docker-build.ps1           # Docker build script (Windows)
-│   └── debug_*.py                 # Debug utilities
+├── scripts/                          # Utility scripts
+│   ├── install.py                   # Installation script
+│   ├── run_server.py               # Server runner
+│   ├── setup.py                    # Setup helper
+│   ├── setup.ps1                   # PowerShell setup
+│   ├── test_setup.ps1              # PowerShell test setup
+│   ├── docker-build.sh             # Docker build (Linux/Mac)
+│   ├── docker-build.ps1            # Docker build (Windows)
+│   ├── healthcheck.py             # Health check script
+│   └── debug_*.py                  # Debug utilities
 │
-├── docs/                          # Documentation
-│   ├── QUICK_START.md
-│   ├── USAGE_EXAMPLES.md
-│   ├── PROJECT_STRUCTURE.md
-│   └── config_examples.json
+├── docs/                            # Documentation
+│   ├── DEVELOPMENT.md              # Development guide
+│   ├── FEATURES.md                 # Feature details
+│   ├── INTEGRATIONS.md             # VS Code & Claude setup
+│   ├── ORPHANED_RESOURCES.md       # Orphaned resources guide
+│   ├── PROJECT_STRUCTURE.md        # This file
+│   ├── SETUP_CHECKLIST.md          # Setup verification
+│   ├── TOOLS.md                    # Tool documentation
+│   ├── USAGE_EXAMPLES.md           # Detailed examples
+│   └── config_examples.json        # Configuration examples
 │
-├── Dockerfile                     # Docker image definition
-├── pyproject.toml                 # Modern Python packaging config
-├── requirements.txt               # Dependencies
-├── README.md                      # Main documentation
-├── INSTALL.md                     # Installation guide
-├── QUICK_START.md                 # Quick start guide
-├── SETUP_CHECKLIST.md             # Setup verification
-├── MANIFEST.in                    # Package data inclusion
-└── .gitignore                     # Git ignore patterns
+├── Dockerfile                       # Docker image definition
+├── pyproject.toml                   # Python packaging config (PEP 518)
+├── requirements.txt                 # Dependencies
+├── MANIFEST.in                      # Package data inclusion
+├── README.md                        # Main documentation
+├── INSTALL.md                       # Installation guide
+├── CONTRIBUTING.md                  # Contribution guide
+├── CHANGELOG.md                     # Version history
+└── LICENSE                          # MIT License
 ```
 
-## Key Improvements
+## Architecture
 
-### 1. **Src Layout**
-- Source code is in `src/azure_pricing_mcp/` following the "src layout" pattern
-- Prevents accidental imports from the project root
-- Ensures tests run against the installed package
+### Package Organization
 
-### 2. **Modern Packaging**
-- `pyproject.toml` - PEP 518/517 compliant packaging configuration
-- `setup.py` - Maintained for backward compatibility
-- `MANIFEST.in` - Controls what files are included in distributions
+The codebase follows a **service → handler → formatter → tool** pattern:
 
-### 3. **Clear Separation**
-- **Source code**: `src/azure_pricing_mcp/`
-- **Tests**: `tests/`
-- **Scripts**: `scripts/` (utilities, debug tools)
-- **Documentation**: `docs/` and root-level markdown files
+1. **`tools.py`** — Defines MCP tool schemas (name, description, input parameters)
+2. **`handlers.py`** — Routes tool calls to service methods, returns formatted output
+3. **`services/`** — Business logic: API calls, calculations, data processing
+4. **`formatters.py`** — Converts service results into Markdown for AI assistants
 
-### 4. **Package Organization**
-- `server.py` - Core MCP server setup and routing
-- `handlers.py` - MCP tool call handlers
-- `client.py` - Azure Pricing API client with HTTP handling
-- `auth.py` - Azure AD authentication for Spot VM tools
-- `config.py` - Configuration constants and settings
-- `formatters.py` - Response formatting utilities
-- `models.py` - Data models and type definitions
-- `tools.py` - MCP tool definitions
-- `services/` - Business logic layer
-  - `pricing.py` - Price search, comparison, and estimation
-  - `retirement.py` - VM SKU retirement tracking
-  - `sku.py` - SKU discovery and fuzzy matching
-  - `spot.py` - Spot VM eviction rates, price history, simulation
-- `__init__.py` - Package exports and version
-- `__main__.py` - Module execution entry point
+### Mixin-Based Handlers
 
-## Installation
+The main `ToolHandlers` class inherits from handler mixins:
 
-### Development Installation
-
-```bash
-# Run the installation script
-python scripts/install.py
-
-# Or manually:
-python -m venv .venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-pip install -e .[dev]
+```python
+class ToolHandlers(DatabricksHandlers, GitHubPricingHandlers):
+    # Core Azure pricing handlers + inherited Databricks + GitHub handlers
 ```
 
-### Production Installation
+### Adding a New Tool Package
 
-```bash
-pip install .
-```
+New tool packages (like Databricks or GitHub Pricing) follow this pattern:
 
-Or from PyPI (when published):
-```bash
-pip install azure-pricing-mcp
-```
+1. Create `src/azure_pricing_mcp/<package>/` with `__init__.py`, `tools.py`, `handlers.py`, `formatters.py`
+2. Add service logic in `services/<service>.py`
+3. Create a handler mixin class and add it to `ToolHandlers` inheritance
+4. Register tool definitions in the package's `tools.py`
+5. Add routing in `server.py`'s `_register_tool_handlers()`
 
 ## Running the Server
 
-### Method 1: Module execution
 ```bash
+# Module execution
 python -m azure_pricing_mcp
-```
 
-### Method 2: Console script (after installation)
-```bash
+# Console script (after pip install)
 azure-pricing-mcp
-```
 
-### Method 3: Use the run script
-```bash
+# Run script
 python scripts/run_server.py
 ```
 
-## Development Workflow
+## Development
 
-### Setting up for development
 ```bash
-# Install in editable mode with dev dependencies
+# Install in editable mode
 pip install -e .[dev]
-```
 
-### Code formatting
-```bash
-# Format code with black
+# Format, lint, type check, test
 black src/ tests/
-
-# Lint with ruff
 ruff check src/ tests/
-```
-
-### Type checking
-```bash
-mypy src/
-```
-
-### Running tests
-```bash
+mypy src/ --ignore-missing-imports
 pytest tests/
 ```
-
-## VS Code / MCP Client Configuration
-
-Update your MCP configuration to use the new package name:
-
-```json
-{
-  "servers": {
-    "azure-pricing": {
-      "type": "stdio",
-      "command": "/path/to/.venv/bin/python",
-      "args": ["-m", "azure_pricing_mcp"]
-    }
-  }
-}
-```
-
-Or use the installed console script:
-
-```json
-{
-  "servers": {
-    "azure-pricing": {
-      "type": "stdio",
-      "command": "azure-pricing-mcp"
-    }
-  }
-}
-```
-
-## Benefits of This Structure
-
-1. **Professional**: Follows established Python packaging standards
-2. **Testable**: Clear separation enables better testing practices
-3. **Installable**: Can be installed via pip and distributed on PyPI
-4. **Maintainable**: Logical organization makes code easier to navigate
-5. **Extensible**: Easy to add new modules and features
-6. **Modern**: Uses latest Python packaging tools and conventions
-
-## Migration Notes
-
-If you have existing installations:
-
-1. **Old import**: `import azure_pricing_server` → **New import**: `import azure_pricing_mcp`
-2. **Old command**: `python -m azure_pricing_server` → **New command**: `python -m azure_pricing_mcp`
-3. **Update MCP configs** to reference the new module name
-4. **Reinstall** using the new installation method
-
-## Additional Resources
-
-- [Python Packaging User Guide](https://packaging.python.org/)
-- [PEP 517 - Backend Interface](https://peps.python.org/pep-0517/)
-- [PEP 518 - Build System](https://peps.python.org/pep-0518/)
-- [Src Layout vs Flat Layout](https://packaging.python.org/en/latest/discussions/src-layout-vs-flat-layout/)

@@ -29,17 +29,24 @@ pip install -e .[dev]
 ```
 AzurePricingMCP/
 ├── src/azure_pricing_mcp/   # Source code
-│   ├── server.py            # Main server implementation
-│   ├── handlers.py          # Tool call handlers
-│   ├── __init__.py          # Package initialization
-│   └── __main__.py          # Entry point
-├── tests/                   # Test files
+│   ├── server.py            # MCP server, routing, lifecycle
+│   ├── handlers.py          # Main tool handlers (extends mixins)
+│   ├── client.py            # Azure Pricing API client
+│   ├── config.py            # Pricing data & constants
+│   ├── tools.py             # Core tool definitions
+│   ├── formatters.py        # Response formatters
+│   ├── models.py            # Data models
+│   ├── auth.py              # Azure AD authentication
+│   ├── services/            # Business logic layer
+│   ├── databricks/          # Databricks DBU tools
+│   └── github_pricing/      # GitHub pricing tools
+├── tests/                   # Test files (9 files)
 ├── scripts/                 # Utility scripts
 ├── docs/                    # Documentation
-└── pyproject.toml          # Package configuration
+└── pyproject.toml           # Package configuration
 ```
 
-See [docs/PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md) for detailed information.
+See [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md) for detailed information.
 
 ## Development Workflow
 
@@ -128,81 +135,53 @@ Configure VS Code or Claude Desktop to use your development server:
 
 ### Adding a New Tool
 
-1. **Add the tool method to `server.py`**:
+The project uses a **service → handler → formatter → tool** pattern. New tool packages (like Databricks or GitHub Pricing) follow this structure:
+
+1. **Create a service** in `services/<name>.py` with the business logic:
 
 ```python
-class AzurePricingServer:
-    async def my_new_feature(self, param1: str, param2: Optional[int] = None) -> Dict[str, Any]:
-        """
-        Description of what this does.
-        
-        Args:
-            param1: Description
-            param2: Description
-            
-        Returns:
-            Dictionary with results
-        """
+# src/azure_pricing_mcp/services/my_feature.py
+class MyFeatureService:
+    def __init__(self, client):
+        self._client = client
+
+    async def get_data(self, param1: str) -> dict:
         # Implementation
         return {"result": "data"}
 ```
 
-2. **Register the tool in `server.py` `create_server()`**:
+2. **Create a tool package** `src/azure_pricing_mcp/my_feature/` with:
+   - `tools.py` — Tool schema definitions
+   - `handlers.py` — Handler mixin class
+   - `formatters.py` — Markdown response formatters
+   - `__init__.py`
+
+3. **Create the handler mixin**:
 
 ```python
-@server.list_tools()
-async def handle_list_tools() -> List[Tool]:
-    return [
-        # ... existing tools ...
-        Tool(
-            name="my_new_feature",
-            description="Description for AI assistant",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "param1": {
-                        "type": "string",
-                        "description": "Parameter description"
-                    },
-                    "param2": {
-                        "type": "integer",
-                        "description": "Optional parameter"
-                    }
-                },
-                "required": ["param1"]
-            }
-        )
-    ]
+# src/azure_pricing_mcp/my_feature/handlers.py
+class MyFeatureHandlers:
+    async def handle_my_tool(self, arguments: dict) -> list:
+        result = await self._my_service.get_data(arguments["param1"])
+        return [TextContent(type="text", text=format_result(result))]
 ```
 
-3. **Add handler in `handlers.py`**:
+4. **Add the mixin to `ToolHandlers`** in `handlers.py`:
 
 ```python
-async def _handle_my_new_feature(pricing_server, arguments: dict) -> List[TextContent]:
-    """Handle my_new_feature tool calls."""
-    result = await pricing_server.my_new_feature(**arguments)
-    return [TextContent(type="text", text=json.dumps(result, indent=2))]
-
-# Register in handle_call_tool
-async def handle_call_tool(name: str, arguments: dict) -> list:
-    if name == "my_new_feature":
-        return await _handle_my_new_feature(pricing_server, arguments)
+class ToolHandlers(DatabricksHandlers, GitHubPricingHandlers, MyFeatureHandlers):
+    ...
 ```
 
-4. **Write tests in `tests/`**:
+5. **Register routing** in `server.py`'s `_register_tool_handlers()`:
 
 ```python
-import pytest
-from azure_pricing_mcp import AzurePricingServer
-
-@pytest.mark.asyncio
-async def test_my_new_feature():
-    async with AzurePricingServer() as server:
-        result = await server.my_new_feature("test_value")
-        assert "result" in result
+elif name == "my_tool":
+    return await handlers.handle_my_tool(arguments)
 ```
 
-5. **Update documentation** in README.md
+6. **Write tests** in `tests/test_my_feature.py`
+7. **Update documentation** (TOOLS.md, USAGE_EXAMPLES.md, FEATURES.md, CHANGELOG.md)
 
 ## Code Style Guidelines
 
@@ -294,14 +273,14 @@ python scripts/find_app_service.py
 python -m build
 
 # Outputs to dist/
-# - azure-pricing-mcp-2.1.0.tar.gz
-# - azure_pricing_mcp-2.1.0-py3-none-any.whl
+# - azure-pricing-mcp-4.0.0.tar.gz
+# - azure_pricing_mcp-4.0.0-py3-none-any.whl
 ```
 
 ### Install from Built Package
 
 ```bash
-pip install dist/azure_pricing_mcp-2.1.0-py3-none-any.whl
+pip install dist/azure_pricing_mcp-4.0.0-py3-none-any.whl
 ```
 
 ### Publish to PyPI (Maintainers Only)
@@ -332,8 +311,7 @@ pip install -e .[dev]
 
 Update version in:
 1. `pyproject.toml` - `[project]` section
-2. `setup.py` - `version` parameter
-3. `src/azure_pricing_mcp/__init__.py` - `__version__`
+2. `src/azure_pricing_mcp/__init__.py` - `__version__`
 
 ### Run Pre-commit Checks
 
