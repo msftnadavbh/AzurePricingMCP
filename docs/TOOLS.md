@@ -1,6 +1,6 @@
 # Available Tools
 
-The Azure Pricing MCP Server provides 13 tools for querying Azure pricing information.
+The Azure Pricing MCP Server provides 15 tools for querying Azure pricing information.
 
 ---
 
@@ -55,6 +55,17 @@ No authentication required for sizing. Cost lookup uses the public Azure Retail 
 
 ---
 
+## GitHub Pricing Tools
+
+No authentication required. Data sourced from static pricing tables verified against github.com/pricing.
+
+| Tool | Description |
+|------|-------------|
+| `github_pricing` | Look up GitHub product pricing: Plans (Free/Team/Enterprise), Copilot (Free/Pro/Pro+/Business/Enterprise), Actions runners, Advanced Security, Codespaces, Git LFS, and Packages |
+| `github_cost_estimate` | Estimate monthly and annual GitHub costs based on team size and usage (plan seats, Copilot licenses, Actions minutes, Codespaces hours, LFS packs, GHAS committers) |
+
+---
+
 ## Example Queries
 
 Once configured, ask your AI assistant:
@@ -73,6 +84,8 @@ Once configured, ask your AI assistant:
 | **Orphaned Resources** | "Find orphaned resources across all my subscriptions" |
 | **PTU Sizing** | "How many PTUs do I need for gpt-4.1 at 100 RPM with 500 input and 200 output tokens?" |
 | **PTU Cost** | "Estimate PTU cost for gpt-5 deployment with 50 RPM, 1000 input tokens, 500 output tokens, include cost for eastus" |
+| **GitHub Pricing** | "What are the GitHub Copilot plan prices?" |
+| **GitHub Cost** | "Estimate monthly GitHub cost for 50 users on Team plan with Copilot Business and 10,000 Actions minutes" |
 
 ### Sample Response
 

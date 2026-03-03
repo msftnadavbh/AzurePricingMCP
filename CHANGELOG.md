@@ -5,6 +5,17 @@ All notable changes to the Azure Pricing MCP Server will be documented in this f
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.5.0] - 2026-03-03
+
+### Added
+
+- **GitHub Pricing Tools** — full GitHub product pricing catalog
+  - `github_pricing` — look up pricing for Plans, Copilot, Actions runners, Advanced Security, Codespaces, Git LFS, and Packages
+  - `github_cost_estimate` — estimate monthly/annual GitHub costs based on team size and usage
+  - Static pricing table verified against github.com/pricing (no API calls required)
+  - Natural-language product aliases (e.g., 'ci/cd' → Actions, 'pair programmer' → Copilot)
+  - Full test suite with config validation, service logic, formatter, and handler integration tests
+
 ## [3.4.0] - 2026-03-03
 
 ### Added

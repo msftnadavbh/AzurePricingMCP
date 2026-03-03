@@ -7,6 +7,7 @@ from mcp.types import TextContent
 
 from .config import DEFAULT_CUSTOMER_DISCOUNT
 from .databricks.handlers import DatabricksHandlers
+from .github_pricing.handlers import GitHubPricingHandlers
 from .formatters import (
     _get_discount_tip,
     format_cost_estimate_response,
@@ -29,7 +30,7 @@ from .services.orphaned import OrphanedResourcesService
 logger = logging.getLogger(__name__)
 
 
-class ToolHandlers(DatabricksHandlers):
+class ToolHandlers(DatabricksHandlers, GitHubPricingHandlers):
     """Handlers for MCP tool calls."""
 
     def __init__(
@@ -46,6 +47,7 @@ class ToolHandlers(DatabricksHandlers):
         self._orphaned_service = orphaned_service
         self._databricks_service = databricks_service
         self._ptu_service: PTUService | None = None
+        self._github_pricing_service = None
 
     def _resolve_discount(self, arguments: dict[str, Any]) -> tuple[float, bool, bool]:
         """Resolve discount settings from arguments.
@@ -311,6 +313,13 @@ def register_tool_handlers(server: Any, tool_handlers: ToolHandlers) -> None:
             # PTU Sizing + Cost Planner
             elif name == "azure_ptu_sizing":
                 return await tool_handlers.handle_ptu_sizing(arguments)
+
+            # GitHub pricing tools
+            elif name == "github_pricing":
+                return await tool_handlers.handle_github_pricing(arguments)
+
+            elif name == "github_cost_estimate":
+                return await tool_handlers.handle_github_cost_estimate(arguments)
 
             else:
                 return [TextContent(type="text", text=f"Unknown tool: {name}")]

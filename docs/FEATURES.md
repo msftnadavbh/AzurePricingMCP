@@ -19,6 +19,7 @@ The Azure Pricing MCP Server provides comprehensive Azure pricing intelligence t
 | 📊 **Real-time Data** | Live data from Azure Retail Prices API |
 | 🏷️ **Customer Discounts** | Apply discount percentages to all pricing queries |
 | ⚡ **PTU Sizing** | Estimate Provisioned Throughput Units for Azure OpenAI deployments |
+| 🐙 **GitHub Pricing** | Full GitHub pricing catalog + cost estimation (Plans, Copilot, Actions, Security, Codespaces) |
 
 ---
 
@@ -162,6 +163,37 @@ PTU sizing calculations are purely offline. Optional cost lookup uses the public
 "Estimate PTUs for gpt-5 with 50 RPM, 1000 prompt tokens, 500 completion tokens, using DataZoneProvisioned"
 "Size a gpt-4.1-mini deployment for 200 RPM with 300 input, 100 output tokens, and 150 cached tokens"
 "Estimate PTU cost for o4-mini in westeurope with 100 RPM"
+```
+
+---
+
+## GitHub Pricing Tools
+
+Full GitHub product pricing catalog and cost estimation — no authentication required.
+
+### Capabilities
+
+| Feature | Description |
+|---------|-------------|
+| **Plan pricing** | Free, Team, Enterprise — per-user monthly rates |
+| **Copilot pricing** | Free, Pro, Pro+, Business, Enterprise plans |
+| **Actions runners** | Per-minute rates for Linux, Windows, macOS, ARM, GPU runners |
+| **Advanced Security** | GHAS per-committer pricing |
+| **Codespaces** | Compute (per core-hour) and storage (per GB/month) |
+| **Add-ons** | Git LFS, Packages, data transfer |
+| **Cost estimation** | Monthly/annual projections based on team size and usage |
+
+### No Authentication Required
+
+GitHub pricing data is maintained as a static table verified against github.com/pricing. All lookups are offline — no API calls required.
+
+### Example Usage
+
+```
+"What are the GitHub Copilot pricing plans?"
+"How much does GitHub Actions cost for macOS runners?"
+"Estimate monthly GitHub cost for 50 users on Team plan with Copilot Business"
+"Show me GitHub Advanced Security pricing"
 ```
 
 ---
