@@ -17,8 +17,8 @@ from azure_pricing_mcp.github_pricing.formatters import (
 )
 from azure_pricing_mcp.services.github_pricing import GitHubPricingService, _resolve_product
 
-
 # ── Config sanity checks ────────────────────────────────────────────────
+
 
 class TestGitHubPricingConfig:
     """Verify static pricing tables are well-formed."""
@@ -64,6 +64,7 @@ class TestGitHubPricingConfig:
 
 # ── Product resolution ──────────────────────────────────────────────────
 
+
 class TestResolveProduct:
     """Test the alias-based product resolution logic."""
 
@@ -101,6 +102,7 @@ class TestResolveProduct:
 
 
 # ── GitHubPricingService.get_pricing ────────────────────────────────────
+
 
 class TestGetPricing:
     """Test the pricing lookup service."""
@@ -163,6 +165,7 @@ class TestGetPricing:
 
 # ── GitHubPricingService.estimate_cost ──────────────────────────────────
 
+
 class TestEstimateCost:
     """Test the cost estimation service."""
 
@@ -207,8 +210,10 @@ class TestEstimateCost:
     @pytest.mark.asyncio
     async def test_codespaces_cost(self, service):
         result = await service.estimate_cost(
-            users=1.0, plan="Free",
-            codespaces_hours=100, codespaces_cores=4,
+            users=1.0,
+            plan="Free",
+            codespaces_hours=100,
+            codespaces_cores=4,
         )
         breakdown = {b["item"]: b for b in result["breakdown"]}
         cs = breakdown.get("Codespaces Compute")
@@ -245,6 +250,7 @@ class TestEstimateCost:
 
 
 # ── Formatters ──────────────────────────────────────────────────────────
+
 
 class TestFormatters:
     """Test response formatters produce valid Markdown."""
@@ -295,6 +301,7 @@ class TestFormatters:
 
 
 # ── Handler integration ─────────────────────────────────────────────────
+
 
 class TestHandlerIntegration:
     """Test handlers produce TextContent responses."""

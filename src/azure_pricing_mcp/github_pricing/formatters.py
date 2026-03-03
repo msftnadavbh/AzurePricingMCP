@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
-
 # ── github_pricing ──────────────────────────────────────────────────────
+
 
 def format_github_pricing_response(result: dict[str, Any]) -> str:
     """Format the ``github_pricing`` response for display."""
@@ -56,6 +56,7 @@ def _format_empty_pricing(result: dict[str, Any]) -> str:
 
 # ── Plans ───────────────────────────────────────────────────────────────
 
+
 def _append_plans_section(lines: list[str], plans: list[dict[str, Any]]) -> None:
     lines.append("#### GitHub Plans\n")
     lines.append("| Plan | Monthly / user | Target |")
@@ -67,6 +68,7 @@ def _append_plans_section(lines: list[str], plans: list[dict[str, Any]]) -> None
 
 
 # ── Copilot ─────────────────────────────────────────────────────────────
+
 
 def _append_copilot_section(lines: list[str], plans: list[dict[str, Any]]) -> None:
     lines.append("#### GitHub Copilot\n")
@@ -80,6 +82,7 @@ def _append_copilot_section(lines: list[str], plans: list[dict[str, Any]]) -> No
 
 
 # ── Actions ─────────────────────────────────────────────────────────────
+
 
 def _append_actions_section(lines: list[str], data: dict[str, Any]) -> None:
     lines.append("#### GitHub Actions Runners\n")
@@ -108,6 +111,7 @@ def _append_actions_section(lines: list[str], data: dict[str, Any]) -> None:
 
 # ── Security ────────────────────────────────────────────────────────────
 
+
 def _append_security_section(lines: list[str], products: list[dict[str, Any]]) -> None:
     lines.append("#### GitHub Advanced Security\n")
     for p in products:
@@ -121,6 +125,7 @@ def _append_security_section(lines: list[str], products: list[dict[str, Any]]) -
 
 # ── Codespaces ──────────────────────────────────────────────────────────
 
+
 def _append_codespaces_section(lines: list[str], data: dict[str, Any]) -> None:
     lines.append("#### GitHub Codespaces\n")
     compute = data.get("compute", {})
@@ -132,6 +137,7 @@ def _append_codespaces_section(lines: list[str], data: dict[str, Any]) -> None:
 
 # ── Storage / Add-ons ───────────────────────────────────────────────────
 
+
 def _append_storage_section(lines: list[str], items: list[dict[str, Any]]) -> None:
     lines.append("#### Storage & Packages\n")
     lines.append("| Product | Price | Unit |")
@@ -142,6 +148,7 @@ def _append_storage_section(lines: list[str], items: list[dict[str, Any]]) -> No
 
 
 # ── github_cost_estimate ────────────────────────────────────────────────
+
 
 def format_github_cost_estimate_response(result: dict[str, Any]) -> str:
     """Format the ``github_cost_estimate`` response for display."""
