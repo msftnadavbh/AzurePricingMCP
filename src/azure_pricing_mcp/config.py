@@ -72,6 +72,9 @@ SERVICE_NAME_MAPPINGS: dict[str, str] = {
     "lb": "Load Balancer",
     "application gateway": "Application Gateway",
     "app gateway": "Application Gateway",
+    "databricks": "Azure Databricks",
+    "spark": "Azure Databricks",
+    "dbu": "Azure Databricks",
 }
 
 # VM series replacement recommendations
@@ -109,6 +112,61 @@ VM_SERIES_REPLACEMENTS: dict[str, str] = {
     "Eav4": "Eav5 or Eav6 series",
     "G": "Ev5 or Edsv5 series",
     "Gs": "Edsv5 or Edsv6 series",
+}
+
+# =============================================================================
+# Azure Databricks DBU Configuration
+# =============================================================================
+
+# The official Azure service name for Databricks in the Retail Prices API
+DATABRICKS_SERVICE_NAME = "Azure Databricks"
+
+# Workload type mappings: user-friendly names -> OData skuName filter values
+# These map to the skuName field returned by the Azure Retail Prices API
+DATABRICKS_WORKLOAD_MAPPINGS: dict[str, list[str]] = {
+    "all-purpose": ["All-purpose Compute", "All-Purpose Photon"],
+    "jobs": ["Jobs Compute", "Jobs Compute Photon"],
+    "jobs light": ["Jobs Light Compute"],
+    "sql pro": ["SQL Compute Pro"],
+    "sql analytics": ["SQL Analytics"],
+    "serverless sql": ["Serverless SQL"],
+    "automated serverless": ["Automated Serverless Compute"],
+    "interactive serverless": ["Interactive Serverless Compute"],
+    "delta live tables core": ["Core Compute Delta Live Tables", "Core Compute Photon Delta Live Tables"],
+    "delta live tables pro": ["Pro Compute Delta Live Tables", "Pro Compute Photon Delta Live Tables"],
+    "delta live tables advanced": [
+        "Advanced Compute Delta Live Tables",
+        "Advanced Compute Photon Delta Live Tables",
+    ],
+    "model training": ["Model Training"],
+    "serverless inferencing": ["Serverless Realtime Inferencing"],
+    "database serverless": ["Database Serverless Compute"],
+}
+
+# User-friendly aliases for workload type lookup
+DATABRICKS_WORKLOAD_ALIASES: dict[str, str] = {
+    "all purpose": "all-purpose",
+    "allpurpose": "all-purpose",
+    "general": "all-purpose",
+    "interactive": "all-purpose",
+    "notebook": "all-purpose",
+    "job": "jobs",
+    "batch": "jobs",
+    "etl": "jobs",
+    "light": "jobs light",
+    "sql": "sql pro",
+    "warehouse": "serverless sql",
+    "sql warehouse": "serverless sql",
+    "serverless": "automated serverless",
+    "dlt": "delta live tables pro",
+    "delta live tables": "delta live tables pro",
+    "pipelines": "delta live tables pro",
+    "ml": "model training",
+    "training": "model training",
+    "inference": "serverless inferencing",
+    "serving": "serverless inferencing",
+    "model serving": "serverless inferencing",
+    "lakebase": "database serverless",
 }
 
 # =============================================================================

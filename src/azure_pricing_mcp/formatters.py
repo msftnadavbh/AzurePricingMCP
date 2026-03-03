@@ -4,6 +4,15 @@ import json
 from typing import Any
 
 from azure_pricing_mcp.config import DEFAULT_CUSTOMER_DISCOUNT
+from azure_pricing_mcp.databricks.formatters import (
+    format_databricks_compare_workloads_response as format_databricks_compare_workloads_response,
+)
+from azure_pricing_mcp.databricks.formatters import (
+    format_databricks_cost_estimate_response as format_databricks_cost_estimate_response,
+)
+from azure_pricing_mcp.databricks.formatters import (
+    format_databricks_dbu_pricing_response as format_databricks_dbu_pricing_response,
+)
 
 # Discount tip messages
 DISCOUNT_TIP_DEFAULT_USED = (
@@ -211,11 +220,11 @@ def format_region_recommend_response(result: dict[str, Any]) -> str:
     if not recommendations:
         return "No region recommendations found for the specified criteria."
 
-    response_text = f"""🌍 Region Recommendations for {result['service_name']} - {result['sku_name']}
+    response_text = f"""🌍 Region Recommendations for {result["service_name"]} - {result["sku_name"]}
 
-Currency: {result['currency']}
-Total regions found: {result['total_regions_found']}
-Showing top: {result['showing_top']}
+Currency: {result["currency"]}
+Total regions found: {result["total_regions_found"]}
+Showing top: {result["showing_top"]}
 """
 
     if "discount_applied" in result:
@@ -225,9 +234,9 @@ Showing top: {result['showing_top']}
         summary = result["summary"]
         response_text += f"""
 📊 Summary:
-   🥇 Cheapest: {summary['cheapest_location']} ({summary['cheapest_region']}) - ${summary['cheapest_price']:.6f}
-   🥉 Most Expensive: {summary['most_expensive_location']} ({summary['most_expensive_region']}) - ${summary['most_expensive_price']:.6f}
-   💰 Max Savings: {summary['max_savings_percentage']:.1f}% by choosing the cheapest region
+   🥇 Cheapest: {summary["cheapest_location"]} ({summary["cheapest_region"]}) - ${summary["cheapest_price"]:.6f}
+   🥉 Most Expensive: {summary["most_expensive_location"]} ({summary["most_expensive_region"]}) - ${summary["most_expensive_price"]:.6f}
+   💰 Max Savings: {summary["max_savings_percentage"]:.1f}% by choosing the cheapest region
 """
 
     response_text += "\n📋 Ranked Recommendations (On-Demand Pricing):\n\n"
@@ -279,11 +288,11 @@ def format_cost_estimate_response(result: dict[str, Any]) -> str:
         return f"Error: {result['error']}"
 
     estimate_text = f"""
-Cost Estimate for {result['service_name']} - {result['sku_name']}
-Region: {result['region']}
-Product: {result['product_name']}
-Unit: {result['unit_of_measure']}
-Currency: {result['currency']}
+Cost Estimate for {result["service_name"]} - {result["sku_name"]}
+Region: {result["region"]}
+Product: {result["product_name"]}
+Unit: {result["unit_of_measure"]}
+Currency: {result["currency"]}
 """
 
     if "discount_applied" in result:
@@ -291,39 +300,39 @@ Currency: {result['currency']}
 
     estimate_text += f"""
 Usage Assumptions:
-- Hours per month: {result['usage_assumptions']['hours_per_month']}
-- Hours per day: {result['usage_assumptions']['hours_per_day']}
+- Hours per month: {result["usage_assumptions"]["hours_per_month"]}
+- Hours per day: {result["usage_assumptions"]["hours_per_day"]}
 
 On-Demand Pricing:
-- Hourly Rate: ${result['on_demand_pricing']['hourly_rate']}
-- Daily Cost: ${result['on_demand_pricing']['daily_cost']}
-- Monthly Cost: ${result['on_demand_pricing']['monthly_cost']}
-- Yearly Cost: ${result['on_demand_pricing']['yearly_cost']}
+- Hourly Rate: ${result["on_demand_pricing"]["hourly_rate"]}
+- Daily Cost: ${result["on_demand_pricing"]["daily_cost"]}
+- Monthly Cost: ${result["on_demand_pricing"]["monthly_cost"]}
+- Yearly Cost: ${result["on_demand_pricing"]["yearly_cost"]}
 """
 
     if "discount_applied" in result and "original_hourly_rate" in result["on_demand_pricing"]:
         estimate_text += f"""
 Original Pricing (before discount):
-- Hourly Rate: ${result['on_demand_pricing']['original_hourly_rate']}
-- Daily Cost: ${result['on_demand_pricing']['original_daily_cost']}
-- Monthly Cost: ${result['on_demand_pricing']['original_monthly_cost']}
-- Yearly Cost: ${result['on_demand_pricing']['original_yearly_cost']}
+- Hourly Rate: ${result["on_demand_pricing"]["original_hourly_rate"]}
+- Daily Cost: ${result["on_demand_pricing"]["original_daily_cost"]}
+- Monthly Cost: ${result["on_demand_pricing"]["original_monthly_cost"]}
+- Yearly Cost: ${result["on_demand_pricing"]["original_yearly_cost"]}
 """
 
     if result["savings_plans"]:
         estimate_text += "\nSavings Plans Available:\n"
         for plan in result["savings_plans"]:
             estimate_text += f"""
-{plan['term']} Term:
-- Hourly Rate: ${plan['hourly_rate']}
-- Monthly Cost: ${plan['monthly_cost']}
-- Yearly Cost: ${plan['yearly_cost']}
-- Savings: {plan['savings_percent']}% (${plan['annual_savings']} annually)
+{plan["term"]} Term:
+- Hourly Rate: ${plan["hourly_rate"]}
+- Monthly Cost: ${plan["monthly_cost"]}
+- Yearly Cost: ${plan["yearly_cost"]}
+- Savings: {plan["savings_percent"]}% (${plan["annual_savings"]} annually)
 """
             if "original_hourly_rate" in plan:
-                estimate_text += f"""- Original Hourly Rate: ${plan['original_hourly_rate']}
-- Original Monthly Cost: ${plan['original_monthly_cost']}
-- Original Yearly Cost: ${plan['original_yearly_cost']}
+                estimate_text += f"""- Original Hourly Rate: ${plan["original_hourly_rate"]}
+- Original Monthly Cost: ${plan["original_monthly_cost"]}
+- Original Yearly Cost: ${plan["original_yearly_cost"]}
 """
 
     return estimate_text
@@ -418,13 +427,13 @@ def format_customer_discount_response(result: dict[str, Any]) -> str:
     """Format the customer discount response for display."""
     return f"""Customer Discount Information
 
-Customer ID: {result['customer_id']}
-Discount Type: {result['discount_type']}
-Discount Percentage: {result['discount_percentage']}%
-Description: {result['description']}
-Applicable Services: {result['applicable_services']}
+Customer ID: {result["customer_id"]}
+Discount Type: {result["discount_type"]}
+Discount Percentage: {result["discount_percentage"]}%
+Description: {result["description"]}
+Applicable Services: {result["applicable_services"]}
 
-{result['note']}
+{result["note"]}
 """
 
 
@@ -559,9 +568,9 @@ def format_simulate_eviction_response(result: dict[str, Any]) -> str:
         return f"""### ✅ Eviction Simulation Triggered
 
 **Status:** Success
-**VM Resource ID:** `{result.get('vm_resource_id', 'N/A')}`
+**VM Resource ID:** `{result.get("vm_resource_id", "N/A")}`
 
-{result.get('note', '')}
+{result.get("note", "")}
 
 ⚠️ **What happens next:**
 1. The VM will receive a Scheduled Event notification
