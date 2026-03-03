@@ -54,8 +54,11 @@ def get_github_pricing_tool_definitions() -> list[Tool]:
                     },
                     "plan": {
                         "type": "string",
-                        "description": "GitHub plan: 'Free', 'Team', or 'Enterprise' (default: 'Team')",
-                        "default": "Team",
+                        "description": (
+                            "GitHub plan: 'Free', 'Team', or 'Enterprise'. "
+                            "Only include if the user is asking about GitHub plan costs. "
+                            "Omit to exclude plan seat costs from the estimate."
+                        ),
                     },
                     "copilot_plan": {
                         "type": "string",

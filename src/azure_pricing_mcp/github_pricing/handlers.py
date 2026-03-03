@@ -44,7 +44,7 @@ class GitHubPricingHandlers:
         service = self._get_github_pricing_service()
         result = await service.estimate_cost(
             users=arguments.get("users", 1),
-            plan=arguments.get("plan", "Team"),
+            plan=arguments.get("plan"),
             copilot_plan=arguments.get("copilot_plan"),
             actions_minutes=arguments.get("actions_minutes", 0),
             actions_runner=arguments.get("actions_runner"),

@@ -105,7 +105,7 @@ class GitHubPricingService:
     async def estimate_cost(
         self,
         users: int = 1,
-        plan: str = "Team",
+        plan: str | None = None,
         copilot_plan: str | None = None,
         actions_minutes: int = 0,
         actions_runner: str | None = None,
@@ -119,7 +119,8 @@ class GitHubPricingService:
 
         Args:
             users: Number of user seats.
-            plan: GitHub plan name (Free, Team, Enterprise).
+            plan: GitHub plan name (Free, Team, Enterprise). If None, plan cost
+                  is excluded from the estimate.
             copilot_plan: Copilot plan name (Free, Pro, Pro+, Business, Enterprise).
             actions_minutes: Total Actions minutes consumed (Linux-equivalent).
             actions_runner: Runner label for per-minute pricing lookup.
@@ -135,10 +136,10 @@ class GitHubPricingService:
         breakdown: list[dict[str, Any]] = []
         total = 0.0
 
-        # 1. GitHub Plan cost
-        plan_key = self._match_plan(plan)
-        plan_data = GITHUB_PLANS.get(plan_key)
-        if plan_data:
+        # 1. GitHub Plan cost (only if explicitly requested)
+        plan_key = self._match_plan(plan) if plan else None
+        plan_data = GITHUB_PLANS.get(plan_key) if plan_key else None
+        if plan_data and plan_data["price_monthly"] > 0:
             plan_cost = plan_data["price_monthly"] * users
             breakdown.append(
                 {
@@ -170,7 +171,7 @@ class GitHubPricingService:
 
         # 3. Actions minutes (beyond free tier)
         if actions_minutes > 0:
-            free_mins = GITHUB_ACTIONS_FREE_MINUTES.get(plan_key, {}).get("minutes", 0)
+            free_mins = GITHUB_ACTIONS_FREE_MINUTES.get(plan_key or "Free", {}).get("minutes", 0)
             billable_mins = max(0, actions_minutes - free_mins)
             runner_key = actions_runner or "Linux 2-core"
             runner = GITHUB_ACTIONS_RUNNERS.get(runner_key)
