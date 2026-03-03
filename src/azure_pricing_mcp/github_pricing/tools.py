@@ -10,8 +10,10 @@ def get_github_pricing_tool_definitions() -> list[Tool]:
             name="github_pricing",
             description=(
                 "Look up GitHub product pricing: Plans (Free/Team/Enterprise), "
-                "Copilot (Free/Pro/Pro+/Business/Enterprise), Actions runners, "
+                "GitHub Copilot (Free/Pro/Pro+/Business/Enterprise), Actions runners, "
                 "Advanced Security (GHAS), Codespaces, Git LFS, and Packages. "
+                "IMPORTANT: This tool covers GitHub Copilot (AI coding assistant) only — "
+                "NOT Microsoft 365 Copilot. "
                 "Data sourced from github.com/pricing — no authentication required."
             ),
             inputSchema={
@@ -40,8 +42,10 @@ def get_github_pricing_tool_definitions() -> list[Tool]:
             name="github_cost_estimate",
             description=(
                 "Estimate monthly and annual GitHub costs based on team size and "
-                "usage (plan seats, Copilot licenses, Actions minutes, Codespaces "
+                "usage (plan seats, GitHub Copilot licenses, Actions minutes, Codespaces "
                 "hours, Git LFS packs, GHAS committers). "
+                "IMPORTANT: Copilot here means GitHub Copilot (AI coding assistant) — "
+                "NOT Microsoft 365 Copilot. "
                 "No authentication required."
             ),
             inputSchema={

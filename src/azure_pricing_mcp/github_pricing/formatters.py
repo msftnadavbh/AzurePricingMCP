@@ -72,6 +72,11 @@ def _append_plans_section(lines: list[str], plans: list[dict[str, Any]]) -> None
 
 def _append_copilot_section(lines: list[str], plans: list[dict[str, Any]]) -> None:
     lines.append("#### GitHub Copilot\n")
+    lines.append(
+        "> **Note:** These are **GitHub Copilot** prices (the AI coding assistant "
+        "from GitHub). For **Microsoft 365 Copilot** pricing, use the "
+        "`azure_price_search` tool with service name 'Microsoft 365'.\n"
+    )
     lines.append("| Plan | Monthly | Annual | Target |")
     lines.append("|------|---------|--------|--------|")
     for p in plans:
@@ -159,7 +164,7 @@ def format_github_cost_estimate_response(result: dict[str, Any]) -> str:
         f"**Currency:** {result.get('currency', 'USD')}",
     ]
     if result.get("copilot_plan"):
-        lines.append(f"**Copilot plan:** {result['copilot_plan']}")
+        lines.append(f"**Copilot plan:** {result['copilot_plan']} *(GitHub Copilot — not Microsoft 365 Copilot)*")
     lines.append("")
 
     breakdown = result.get("breakdown", [])
