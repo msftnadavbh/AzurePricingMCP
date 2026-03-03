@@ -25,7 +25,7 @@ class GitHubPricingHandlers:
 
     def _get_github_pricing_service(self) -> GitHubPricingService:
         """Get or lazily create the GitHubPricingService."""
-        if self._github_pricing_service is None:  # type: ignore[has-type]
+        if self._github_pricing_service is None:
             self._github_pricing_service = GitHubPricingService()
         return self._github_pricing_service
 
