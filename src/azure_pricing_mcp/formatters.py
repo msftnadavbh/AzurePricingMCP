@@ -634,7 +634,9 @@ def format_orphaned_resources_response(result: dict[str, Any]) -> str:
         return (
             "### ✅ No Orphaned Resources Found\n\n"
             f"Scanned {len(subscriptions)} subscription(s) — "
-            "no orphaned disks, NICs, public IPs, NSGs, or empty App Service Plans detected."
+            "no orphaned disks, public IPs, App Service Plans, SQL Elastic Pools, "
+            "Application Gateways, NAT Gateways, Load Balancers, Private DNS Zones, "
+            "Private Endpoints, Virtual Network Gateways, or DDoS Protection Plans detected."
         )
 
     # Collect all orphaned resources across subscriptions

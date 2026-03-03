@@ -17,6 +17,14 @@ from azure_pricing_mcp.handlers import ToolHandlers
 from azure_pricing_mcp.services.orphaned import OrphanedResourcesService
 from azure_pricing_mcp.services.orphaned_resources import (
     COST_LOOKBACK_DAYS,
+    ORPHANED_APP_GATEWAYS_QUERY,
+    ORPHANED_DDOS_PLANS_QUERY,
+    ORPHANED_LOAD_BALANCERS_QUERY,
+    ORPHANED_NAT_GATEWAYS_QUERY,
+    ORPHANED_PRIVATE_DNS_ZONES_QUERY,
+    ORPHANED_PRIVATE_ENDPOINTS_QUERY,
+    ORPHANED_SQL_ELASTIC_POOLS_QUERY,
+    ORPHANED_VNET_GATEWAYS_QUERY,
     OrphanedResourceScanner,
 )
 from azure_pricing_mcp.tools import get_tool_definitions
@@ -180,8 +188,357 @@ class TestScannerResourceGraph:
 
         scanner._execute_resource_graph_query = mixed_results
         result = await scanner.scan()
-        # 5 queries total, first fails, other 4 each return 1 resource
-        assert result["total_orphaned"] == 4
+        # 11 queries total, first fails, other 10 each return 1 resource
+        assert result["total_orphaned"] == 10
+
+
+# ---------------------------------------------------------------------------
+# Scanner – resource type coverage
+# ---------------------------------------------------------------------------
+
+
+class TestScannerResourceTypes:
+    """Tests for all 11 orphaned resource type queries."""
+
+    @pytest.mark.asyncio
+    async def test_all_queries_are_defined(self):
+        """All Resource Graph queries must exist and be non-empty."""
+        assert ORPHANED_SQL_ELASTIC_POOLS_QUERY.strip()
+        assert ORPHANED_APP_GATEWAYS_QUERY.strip()
+        assert ORPHANED_NAT_GATEWAYS_QUERY.strip()
+        assert ORPHANED_LOAD_BALANCERS_QUERY.strip()
+        assert ORPHANED_PRIVATE_DNS_ZONES_QUERY.strip()
+        assert ORPHANED_PRIVATE_ENDPOINTS_QUERY.strip()
+        assert ORPHANED_VNET_GATEWAYS_QUERY.strip()
+        assert ORPHANED_DDOS_PLANS_QUERY.strip()
+
+    @pytest.mark.asyncio
+    async def test_scanner_includes_all_eleven_queries(self, scanner):
+        """Scanner.scan() must execute 11 separate graph queries."""
+        subs = [{"id": "sub-1", "name": "Test"}]
+        scanner._get_subscriptions = AsyncMock(return_value=subs)
+        scanner._execute_resource_graph_query = AsyncMock(return_value={"data": []})
+        scanner._get_resource_cost = AsyncMock(return_value=0.0)
+
+        await scanner.scan()
+        assert scanner._execute_resource_graph_query.call_count == 11
+
+    @pytest.mark.asyncio
+    async def test_sql_elastic_pool_results_tagged(self, scanner):
+        """SQL Elastic Pool results must carry orphan_type label."""
+        subs = [{"id": "sub-1", "name": "Test"}]
+        scanner._get_subscriptions = AsyncMock(return_value=subs)
+        scanner._get_resource_cost = AsyncMock(return_value=5.0)
+
+        async def route_query(query, subscription_ids=None):
+            if "elasticpools" in query.lower():
+                return {
+                    "data": [
+                        {
+                            "id": "/subs/sub-1/rg/rg1/providers/Microsoft.Sql/servers/srv/elasticPools/pool1",
+                            "name": "pool1",
+                            "type": "microsoft.sql/servers/elasticpools",
+                            "location": "eastus",
+                            "resourceGroup": "rg1",
+                            "subscriptionId": "sub-1",
+                        }
+                    ]
+                }
+            return {"data": []}
+
+        scanner._execute_resource_graph_query = route_query
+        result = await scanner.scan()
+        orphans = result["subscriptions"][0]["orphaned_resources"]
+        pool = next(r for r in orphans if r["name"] == "pool1")
+        assert pool["orphan_type"] == "Orphaned SQL Elastic Pool"
+
+    @pytest.mark.asyncio
+    async def test_application_gateway_results_tagged(self, scanner):
+        """Application Gateway results must carry orphan_type label."""
+        subs = [{"id": "sub-1", "name": "Test"}]
+        scanner._get_subscriptions = AsyncMock(return_value=subs)
+        scanner._get_resource_cost = AsyncMock(return_value=20.0)
+
+        async def route_query(query, subscription_ids=None):
+            if "applicationgateways" in query.lower():
+                return {
+                    "data": [
+                        {
+                            "id": "/subs/sub-1/rg/rg1/providers/Microsoft.Network/applicationGateways/ag1",
+                            "name": "ag1",
+                            "type": "microsoft.network/applicationgateways",
+                            "location": "westus2",
+                            "resourceGroup": "rg1",
+                            "subscriptionId": "sub-1",
+                        }
+                    ]
+                }
+            return {"data": []}
+
+        scanner._execute_resource_graph_query = route_query
+        result = await scanner.scan()
+        orphans = result["subscriptions"][0]["orphaned_resources"]
+        ag = next(r for r in orphans if r["name"] == "ag1")
+        assert ag["orphan_type"] == "Orphaned Application Gateway"
+
+    @pytest.mark.asyncio
+    async def test_nat_gateway_results_tagged(self, scanner):
+        """NAT Gateway results must carry orphan_type label."""
+        subs = [{"id": "sub-1", "name": "Test"}]
+        scanner._get_subscriptions = AsyncMock(return_value=subs)
+        scanner._get_resource_cost = AsyncMock(return_value=3.0)
+
+        async def route_query(query, subscription_ids=None):
+            if "natgateways" in query.lower():
+                return {
+                    "data": [
+                        {
+                            "id": "/subs/sub-1/rg/rg1/providers/Microsoft.Network/natGateways/nat1",
+                            "name": "nat1",
+                            "type": "microsoft.network/natgateways",
+                            "location": "eastus",
+                            "resourceGroup": "rg1",
+                            "subscriptionId": "sub-1",
+                        }
+                    ]
+                }
+            return {"data": []}
+
+        scanner._execute_resource_graph_query = route_query
+        result = await scanner.scan()
+        orphans = result["subscriptions"][0]["orphaned_resources"]
+        nat = next(r for r in orphans if r["name"] == "nat1")
+        assert nat["orphan_type"] == "Orphaned NAT Gateway"
+
+    @pytest.mark.asyncio
+    async def test_load_balancer_results_tagged(self, scanner):
+        """Load Balancer results must carry orphan_type label."""
+        subs = [{"id": "sub-1", "name": "Test"}]
+        scanner._get_subscriptions = AsyncMock(return_value=subs)
+        scanner._get_resource_cost = AsyncMock(return_value=10.0)
+
+        async def route_query(query, subscription_ids=None):
+            if "loadbalancers" in query.lower():
+                return {
+                    "data": [
+                        {
+                            "id": "/subs/sub-1/rg/rg1/providers/Microsoft.Network/loadBalancers/lb1",
+                            "name": "lb1",
+                            "type": "microsoft.network/loadbalancers",
+                            "location": "eastus",
+                            "resourceGroup": "rg1",
+                            "subscriptionId": "sub-1",
+                        }
+                    ]
+                }
+            return {"data": []}
+
+        scanner._execute_resource_graph_query = route_query
+        result = await scanner.scan()
+        orphans = result["subscriptions"][0]["orphaned_resources"]
+        lb = next(r for r in orphans if r["name"] == "lb1")
+        assert lb["orphan_type"] == "Orphaned Load Balancer"
+
+    @pytest.mark.asyncio
+    async def test_private_dns_zone_results_tagged(self, scanner):
+        """Private DNS Zone results must carry orphan_type label."""
+        subs = [{"id": "sub-1", "name": "Test"}]
+        scanner._get_subscriptions = AsyncMock(return_value=subs)
+        scanner._get_resource_cost = AsyncMock(return_value=1.0)
+
+        async def route_query(query, subscription_ids=None):
+            if "privatednszones" in query.lower():
+                return {
+                    "data": [
+                        {
+                            "id": "/subs/sub-1/rg/rg1/providers/Microsoft.Network/privateDnsZones/dns1",
+                            "name": "dns1",
+                            "type": "microsoft.network/privatednszones",
+                            "location": "global",
+                            "resourceGroup": "rg1",
+                            "subscriptionId": "sub-1",
+                        }
+                    ]
+                }
+            return {"data": []}
+
+        scanner._execute_resource_graph_query = route_query
+        result = await scanner.scan()
+        orphans = result["subscriptions"][0]["orphaned_resources"]
+        dns = next(r for r in orphans if r["name"] == "dns1")
+        assert dns["orphan_type"] == "Orphaned Private DNS Zone"
+
+    @pytest.mark.asyncio
+    async def test_private_endpoint_results_tagged(self, scanner):
+        """Private Endpoint results must carry orphan_type label."""
+        subs = [{"id": "sub-1", "name": "Test"}]
+        scanner._get_subscriptions = AsyncMock(return_value=subs)
+        scanner._get_resource_cost = AsyncMock(return_value=2.0)
+
+        async def route_query(query, subscription_ids=None):
+            if "privateendpoints" in query.lower():
+                return {
+                    "data": [
+                        {
+                            "id": "/subs/sub-1/rg/rg1/providers/Microsoft.Network/privateEndpoints/pe1",
+                            "name": "pe1",
+                            "type": "microsoft.network/privateendpoints",
+                            "location": "eastus",
+                            "resourceGroup": "rg1",
+                            "subscriptionId": "sub-1",
+                        }
+                    ]
+                }
+            return {"data": []}
+
+        scanner._execute_resource_graph_query = route_query
+        result = await scanner.scan()
+        orphans = result["subscriptions"][0]["orphaned_resources"]
+        pe = next(r for r in orphans if r["name"] == "pe1")
+        assert pe["orphan_type"] == "Orphaned Private Endpoint"
+
+    @pytest.mark.asyncio
+    async def test_vnet_gateway_results_tagged(self, scanner):
+        """Virtual Network Gateway results must carry orphan_type label."""
+        subs = [{"id": "sub-1", "name": "Test"}]
+        scanner._get_subscriptions = AsyncMock(return_value=subs)
+        scanner._get_resource_cost = AsyncMock(return_value=50.0)
+
+        async def route_query(query, subscription_ids=None):
+            if "virtualnetworkgateways" in query.lower():
+                return {
+                    "data": [
+                        {
+                            "id": "/subs/sub-1/rg/rg1/providers/Microsoft.Network/virtualNetworkGateways/vgw1",
+                            "name": "vgw1",
+                            "type": "microsoft.network/virtualnetworkgateways",
+                            "location": "eastus",
+                            "resourceGroup": "rg1",
+                            "subscriptionId": "sub-1",
+                        }
+                    ]
+                }
+            return {"data": []}
+
+        scanner._execute_resource_graph_query = route_query
+        result = await scanner.scan()
+        orphans = result["subscriptions"][0]["orphaned_resources"]
+        vgw = next(r for r in orphans if r["name"] == "vgw1")
+        assert vgw["orphan_type"] == "Orphaned Virtual Network Gateway"
+
+    @pytest.mark.asyncio
+    async def test_ddos_plan_results_tagged(self, scanner):
+        """DDoS Protection Plan results must carry orphan_type label."""
+        subs = [{"id": "sub-1", "name": "Test"}]
+        scanner._get_subscriptions = AsyncMock(return_value=subs)
+        scanner._get_resource_cost = AsyncMock(return_value=2944.0)
+
+        async def route_query(query, subscription_ids=None):
+            if "ddosprotectionplans" in query.lower():
+                return {
+                    "data": [
+                        {
+                            "id": "/subs/sub-1/rg/rg1/providers/Microsoft.Network/ddosProtectionPlans/ddos1",
+                            "name": "ddos1",
+                            "type": "microsoft.network/ddosprotectionplans",
+                            "location": "eastus",
+                            "resourceGroup": "rg1",
+                            "subscriptionId": "sub-1",
+                        }
+                    ]
+                }
+            return {"data": []}
+
+        scanner._execute_resource_graph_query = route_query
+        result = await scanner.scan()
+        orphans = result["subscriptions"][0]["orphaned_resources"]
+        ddos = next(r for r in orphans if r["name"] == "ddos1")
+        assert ddos["orphan_type"] == "Orphaned DDoS Protection Plan"
+
+    @pytest.mark.asyncio
+    async def test_all_types_appear_in_formatter(self):
+        """Formatter must render all resource types when present."""
+        result = {
+            "subscriptions": [
+                {
+                    "subscription_id": "sub-1",
+                    "subscription_name": "Test",
+                    "orphaned_resources": [
+                        {
+                            "name": "pool1",
+                            "orphan_type": "Orphaned SQL Elastic Pool",
+                            "resourceGroup": "rg1",
+                            "location": "eastus",
+                            "estimated_cost_usd": 10.0,
+                        },
+                        {
+                            "name": "ag1",
+                            "orphan_type": "Orphaned Application Gateway",
+                            "resourceGroup": "rg1",
+                            "location": "eastus",
+                            "estimated_cost_usd": 25.0,
+                        },
+                        {
+                            "name": "nat1",
+                            "orphan_type": "Orphaned NAT Gateway",
+                            "resourceGroup": "rg1",
+                            "location": "eastus",
+                            "estimated_cost_usd": 5.0,
+                        },
+                        {
+                            "name": "lb1",
+                            "orphan_type": "Orphaned Load Balancer",
+                            "resourceGroup": "rg1",
+                            "location": "eastus",
+                            "estimated_cost_usd": 10.0,
+                        },
+                        {
+                            "name": "dns1",
+                            "orphan_type": "Orphaned Private DNS Zone",
+                            "resourceGroup": "rg1",
+                            "location": "global",
+                            "estimated_cost_usd": 1.0,
+                        },
+                        {
+                            "name": "pe1",
+                            "orphan_type": "Orphaned Private Endpoint",
+                            "resourceGroup": "rg1",
+                            "location": "eastus",
+                            "estimated_cost_usd": 2.0,
+                        },
+                        {
+                            "name": "vgw1",
+                            "orphan_type": "Orphaned Virtual Network Gateway",
+                            "resourceGroup": "rg1",
+                            "location": "eastus",
+                            "estimated_cost_usd": 50.0,
+                        },
+                        {
+                            "name": "ddos1",
+                            "orphan_type": "Orphaned DDoS Protection Plan",
+                            "resourceGroup": "rg1",
+                            "location": "eastus",
+                            "estimated_cost_usd": 2944.0,
+                        },
+                    ],
+                }
+            ],
+            "total_orphaned": 8,
+            "total_estimated_cost": 3047.0,
+            "lookback_days": 60,
+            "currency": "USD",
+            "note": "Scanned 1 subscription(s).",
+        }
+        output = format_orphaned_resources_response(result)
+
+        assert "Orphaned SQL Elastic Pool (1)" in output
+        assert "Orphaned Application Gateway (1)" in output
+        assert "Orphaned NAT Gateway (1)" in output
+        assert "Orphaned Load Balancer (1)" in output
+        assert "Orphaned Private DNS Zone (1)" in output
+        assert "Orphaned Private Endpoint (1)" in output
+        assert "Orphaned Virtual Network Gateway (1)" in output
+        assert "Orphaned DDoS Protection Plan (1)" in output
 
 
 # ---------------------------------------------------------------------------
@@ -219,8 +576,8 @@ class TestScannerCostLookup:
         scanner._get_resource_cost = AsyncMock(return_value=12.50)
 
         result = await scanner.scan(days=30)
-        # 5 queries × 2 resources each × $12.50 = $125.00
-        assert result["total_estimated_cost"] == 125.00
+        # 11 queries × 2 resources each × $12.50 = $275.00
+        assert result["total_estimated_cost"] == 275.00
         assert result["lookback_days"] == 30
 
     @pytest.mark.asyncio
@@ -311,8 +668,8 @@ class TestFormatter:
                             "estimated_cost_usd": 10.0,
                         },
                         {
-                            "name": "nic1",
-                            "orphan_type": "Orphaned NIC",
+                            "name": "lb1",
+                            "orphan_type": "Orphaned Load Balancer",
                             "resourceGroup": "rg1",
                             "location": "eastus",
                             "estimated_cost_usd": 0.0,
@@ -337,14 +694,14 @@ class TestFormatter:
 
         # Must contain per-type section headers
         assert "Unattached Disk (2)" in output
-        assert "Orphaned NIC (1)" in output
+        assert "Orphaned Load Balancer (1)" in output
         # Summary table
-        assert "| Orphaned NIC | 1 |" in output
+        assert "| Orphaned Load Balancer | 1 |" in output
         assert "| Unattached Disk | 2 |" in output
         # Detail rows
         assert "disk1" in output
         assert "disk2" in output
-        assert "nic1" in output
+        assert "lb1" in output
 
     def test_error_result_formatted(self):
         """Auth error dicts should render via _format_spot_error."""

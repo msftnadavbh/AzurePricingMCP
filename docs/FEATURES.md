@@ -102,10 +102,16 @@ Detect orphaned Azure resources across subscriptions and calculate their real wa
 | Resource Type | Detection Criteria |
 |---------------|--------------------|
 | Unattached Disks | Managed disks with no `managedBy` (not attached to any VM) |
-| Orphaned NICs | Network interfaces not attached to a VM or private endpoint |
 | Orphaned Public IPs | Public IPs not associated with any IP configuration or NAT gateway |
-| Orphaned NSGs | Network security groups not attached to any NIC or subnet |
 | Empty App Service Plans | App Service Plans with zero hosted apps |
+| Orphaned SQL Elastic Pools | SQL Elastic Pools with no databases in the pool |
+| Orphaned Application Gateways | Application gateways with no backend address pools or targets |
+| Orphaned NAT Gateways | NAT gateways not associated with any subnet |
+| Orphaned Load Balancers | Load balancers with no backend address pools |
+| Orphaned Private DNS Zones | Private DNS zones with no virtual network links |
+| Orphaned Private Endpoints | Private endpoints with no connections or unapproved connections |
+| Orphaned Virtual Network Gateways | Virtual network gateways with no IP configurations |
+| Orphaned DDoS Protection Plans | DDoS protection plans with no associated virtual networks |
 
 ### Authentication Required
 

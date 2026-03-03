@@ -7,7 +7,14 @@ Orphaned resources are Azure resources that were created but are no longer servi
 - 💿 **Unattached Managed Disks** - Storage volumes that were detached from virtual machines (often after VM deletion) but remain in your subscription
 - 🌐 **Unattached Public IPs** - IP addresses that are no longer associated with any network interface or load balancer
 - 📋 **Empty App Service Plans** - Hosting plans that have no web apps deployed but still reserve compute capacity
-- ⚖️ **Orphaned Load Balancers** - Load balancers with no backend pools or targets
+- 🗄️ **Orphaned SQL Elastic Pools** - Elastic pools with no databases, still incurring reserved compute and storage costs
+- 🚪 **Orphaned Application Gateways** - Application gateways with no backend address pools or targets configured
+- 🔀 **Orphaned NAT Gateways** - NAT gateways not associated with any subnet
+- ⚖️ **Orphaned Load Balancers** - Load balancers with no backend address pools configured
+- 🔒 **Orphaned Private DNS Zones** - Private DNS zones with no virtual network links
+- 🔗 **Orphaned Private Endpoints** - Private endpoints with no connections or unapproved connection state
+- 🌉 **Orphaned Virtual Network Gateways** - Virtual network gateways with no IP configurations
+- 🛡️ **Orphaned DDoS Protection Plans** - DDoS protection plans with no associated virtual networks
 
 These resources can accumulate silently over time, creating unnecessary costs. A single forgotten public IP might seem insignificant, but across multiple subscriptions and resource groups, orphaned resources can add up to hundreds or thousands of dollars per month.
 
@@ -59,7 +66,14 @@ Once configured, you can ask Claude:
 - ✅ **Unattached Managed Disks** - Disks not attached to any VM
 - ✅ **Unattached Public IPs** - Public IPs with no configuration
 - ✅ **Orphaned App Service Plans** - Plans with no web apps
-- ✅ **Orphaned Load Balancers** - LBs with no backends
+- ✅ **Orphaned SQL Elastic Pools** - Elastic pools with no databases
+- ✅ **Orphaned Application Gateways** - Application gateways with no backend targets
+- ✅ **Orphaned NAT Gateways** - NAT gateways with no associated subnets
+- ✅ **Orphaned Load Balancers** - Load balancers with no backend address pools
+- ✅ **Orphaned Private DNS Zones** - Private DNS zones with no virtual network links
+- ✅ **Orphaned Private Endpoints** - Private endpoints with no or unapproved connections
+- ✅ **Orphaned Virtual Network Gateways** - Virtual network gateways with no IP configurations
+- ✅ **Orphaned DDoS Protection Plans** - DDoS protection plans with no associated virtual networks
 
 ## 💵 Cost Calculation:
 
@@ -119,13 +133,6 @@ ID: `e4303b68-1de0-4a9d-ad35-5c3eb13c05e7`
 ```
 
 ## 🛠️ Troubleshooting:
-
-### "No module named 'azure.mgmt.web'"
-
-Install the missing package:
-```bash
-pip install azure-mgmt-web
-```
 
 ### "Authentication failed"
 

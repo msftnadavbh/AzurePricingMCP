@@ -39,7 +39,7 @@ These tools require Azure authentication. See [FEATURES.md](FEATURES.md#orphaned
 
 | Tool | Description |
 |------|-------------|
-| `find_orphaned_resources` | Detect orphaned resources (unattached disks, NICs, public IPs, NSGs, empty App Service Plans) and compute wasted cost |
+| `find_orphaned_resources` | Detect orphaned resources (unattached disks, public IPs, empty App Service Plans, SQL Elastic Pools, Application Gateways, NAT Gateways, Load Balancers, Private DNS Zones, Private Endpoints, Virtual Network Gateways, DDoS Protection Plans) and compute wasted cost |
 
 ---
 

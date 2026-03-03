@@ -1,8 +1,10 @@
 """Orphaned Azure resource scanning and cost lookup service.
 
-This service detects orphaned resources (unattached disks, NICs, public IPs,
-NSGs, App Service Plans) across Azure subscriptions and computes their
-historical cost via the Azure Cost Management API.
+This service detects orphaned resources (unattached disks, public IPs,
+App Service Plans, SQL Elastic Pools, Application Gateways, NAT Gateways,
+Load Balancers, Private DNS Zones, Private Endpoints, Virtual Network Gateways,
+DDoS Protection Plans) across Azure subscriptions and computes their historical
+cost via the Azure Cost Management API.
 
 All methods require Azure authentication. If not authenticated, they return
 a friendly error message with instructions for how to authenticate.
@@ -27,9 +29,7 @@ AZURE_COST_MANAGEMENT_API_VERSION = "2023-11-01"
 # Azure Resource Manager API versions per resource type
 ARM_API_VERSIONS = {
     "disks": "2023-10-02",
-    "networkInterfaces": "2023-11-01",
     "publicIPAddresses": "2023-11-01",
-    "networkSecurityGroups": "2023-11-01",
     "serverfarms": "2023-12-01",
     "subscriptions": "2022-12-01",
 }
@@ -46,16 +46,6 @@ Resources
     timeCreated = tostring(properties.timeCreated)
 """
 
-# Resource Graph query for orphaned NICs (not attached to any VM)
-ORPHANED_NICS_QUERY = """
-Resources
-| where type =~ 'microsoft.network/networkinterfaces'
-| where isnull(properties.virtualMachine.id) or properties.virtualMachine.id == ''
-| where isnull(properties.privateEndpoint.id) or properties.privateEndpoint.id == ''
-| project id, name, type, location, resourceGroup,
-    subscriptionId
-"""
-
 # Resource Graph query for orphaned public IPs (not associated)
 ORPHANED_PUBLIC_IPS_QUERY = """
 Resources
@@ -67,16 +57,6 @@ Resources
     allocationMethod = tostring(properties.publicIPAllocationMethod)
 """
 
-# Resource Graph query for orphaned NSGs (not associated with subnet or NIC)
-ORPHANED_NSGS_QUERY = """
-Resources
-| where type =~ 'microsoft.network/networksecuritygroups'
-| where isnull(properties.networkInterfaces) or array_length(properties.networkInterfaces) == 0
-| where isnull(properties.subnets) or array_length(properties.subnets) == 0
-| project id, name, type, location, resourceGroup,
-    subscriptionId
-"""
-
 # Resource Graph query for empty App Service Plans
 ORPHANED_ASP_QUERY = """
 Resources
@@ -86,6 +66,91 @@ Resources
     subscriptionId,
     sku = tostring(sku.name),
     tier = tostring(sku.tier)
+"""
+
+# Resource Graph query for orphaned SQL Elastic Pools (no databases)
+ORPHANED_SQL_ELASTIC_POOLS_QUERY = """
+Resources
+| where type =~ 'microsoft.sql/servers/elasticpools'
+| project id, name, type, location, resourceGroup,
+    subscriptionId,
+    sku = tostring(sku.name),
+    tier = tostring(sku.tier),
+    dtu = tostring(properties.dtu),
+    serverName = tostring(split(id, '/')[8])
+"""
+
+# Resource Graph query for orphaned Application Gateways (no backend targets)
+ORPHANED_APP_GATEWAYS_QUERY = """
+Resources
+| where type =~ 'microsoft.network/applicationgateways'
+| where isnull(properties.backendAddressPools) or array_length(properties.backendAddressPools) == 0
+    or properties.backendAddressPools == '[]'
+| project id, name, type, location, resourceGroup,
+    subscriptionId,
+    sku = tostring(sku.name),
+    tier = tostring(sku.tier)
+"""
+
+# Resource Graph query for orphaned NAT Gateways (not associated with any subnet)
+ORPHANED_NAT_GATEWAYS_QUERY = """
+Resources
+| where type =~ 'microsoft.network/natgateways'
+| where isnull(properties.subnets) or array_length(properties.subnets) == 0
+| project id, name, type, location, resourceGroup,
+    subscriptionId
+"""
+
+# Resource Graph query for orphaned Load Balancers (no backend address pools)
+ORPHANED_LOAD_BALANCERS_QUERY = """
+Resources
+| where type =~ 'microsoft.network/loadbalancers'
+| where isnull(properties.backendAddressPools) or array_length(properties.backendAddressPools) == 0
+| project id, name, type, location, resourceGroup,
+    subscriptionId,
+    sku = tostring(sku.name)
+"""
+
+# Resource Graph query for orphaned Private DNS Zones (no virtual network links)
+ORPHANED_PRIVATE_DNS_ZONES_QUERY = """
+Resources
+| where type =~ 'microsoft.network/privatednszones'
+| where isnull(properties.numberOfVirtualNetworkLinks)
+    or properties.numberOfVirtualNetworkLinks == 0
+| project id, name, type, location, resourceGroup,
+    subscriptionId,
+    recordSets = tostring(properties.numberOfRecordSets)
+"""
+
+# Resource Graph query for orphaned Private Endpoints (no connections or not approved)
+ORPHANED_PRIVATE_ENDPOINTS_QUERY = """
+Resources
+| where type =~ 'microsoft.network/privateendpoints'
+| where isnull(properties.privateLinkServiceConnections)
+    or array_length(properties.privateLinkServiceConnections) == 0
+    or properties.privateLinkServiceConnections[0].properties.privateLinkServiceConnectionState.status != 'Approved'
+| project id, name, type, location, resourceGroup,
+    subscriptionId
+"""
+
+# Resource Graph query for orphaned Virtual Network Gateways (no IP configurations)
+ORPHANED_VNET_GATEWAYS_QUERY = """
+Resources
+| where type =~ 'microsoft.network/virtualnetworkgateways'
+| where isnull(properties.ipConfigurations) or array_length(properties.ipConfigurations) == 0
+| project id, name, type, location, resourceGroup,
+    subscriptionId,
+    sku = tostring(sku.name),
+    gatewayType = tostring(properties.gatewayType)
+"""
+
+# Resource Graph query for orphaned DDoS Protection Plans (no virtual networks)
+ORPHANED_DDOS_PLANS_QUERY = """
+Resources
+| where type =~ 'microsoft.network/ddosprotectionplans'
+| where isnull(properties.virtualNetworks) or array_length(properties.virtualNetworks) == 0
+| project id, name, type, location, resourceGroup,
+    subscriptionId
 """
 
 
@@ -351,10 +416,16 @@ class OrphanedResourceScanner:
         # Execute all orphaned resource queries
         queries = {
             "Unattached Disk": ORPHANED_DISKS_QUERY,
-            "Orphaned NIC": ORPHANED_NICS_QUERY,
             "Orphaned Public IP": ORPHANED_PUBLIC_IPS_QUERY,
-            "Orphaned NSG": ORPHANED_NSGS_QUERY,
             "Empty App Service Plan": ORPHANED_ASP_QUERY,
+            "Orphaned SQL Elastic Pool": ORPHANED_SQL_ELASTIC_POOLS_QUERY,
+            "Orphaned Application Gateway": ORPHANED_APP_GATEWAYS_QUERY,
+            "Orphaned NAT Gateway": ORPHANED_NAT_GATEWAYS_QUERY,
+            "Orphaned Load Balancer": ORPHANED_LOAD_BALANCERS_QUERY,
+            "Orphaned Private DNS Zone": ORPHANED_PRIVATE_DNS_ZONES_QUERY,
+            "Orphaned Private Endpoint": ORPHANED_PRIVATE_ENDPOINTS_QUERY,
+            "Orphaned Virtual Network Gateway": ORPHANED_VNET_GATEWAYS_QUERY,
+            "Orphaned DDoS Protection Plan": ORPHANED_DDOS_PLANS_QUERY,
         }
 
         all_orphaned: list[dict[str, Any]] = []
