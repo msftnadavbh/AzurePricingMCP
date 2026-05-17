@@ -258,7 +258,21 @@ class TestEstimateCost:
         assert result["monthly_total"] == 21.0
 
     @pytest.mark.asyncio
-    @pytest.mark.parametrize("variant", ["Pro+", "pro+", "Pro Plus", "pro plus", " pro + "])
+    @pytest.mark.parametrize(
+        "variant",
+        [
+            "Pro+",
+            "pro+",
+            "Pro Plus",
+            "pro plus",
+            " pro + ",
+            "pro-plus",
+            "pro_plus",
+            "proplus",
+            "PRO PLUS",
+            "Pro-Plus",
+        ],
+    )
     async def test_copilot_pro_plus_variants(self, service, variant):
         """All natural spellings of "Pro+" resolve to the Pro+ tier ($39),
         not silently down to the Pro tier ($20)."""
