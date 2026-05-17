@@ -285,8 +285,13 @@ class GitHubPricingService:
 
     @staticmethod
     def _match_copilot_plan(name: str) -> str:
-        """Case-insensitive match to a Copilot plan key."""
-        normalised = name.strip().lower().replace("+", "+")
+        """Case-insensitive match to a Copilot plan key.
+
+        Normalises common variants of the "Pro+" plan ("Pro Plus", "pro plus",
+        "pro +", etc.) so they resolve to "Pro+" instead of falling into the
+        fuzzy "Pro" branch and silently under-billing by $19/user/month.
+        """
+        normalised = name.strip().lower().replace(" plus", "+").replace(" ", "")
         for key in GITHUB_COPILOT_PLANS:
             if key.lower() == normalised:
                 return key
