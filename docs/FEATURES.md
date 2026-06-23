@@ -19,6 +19,7 @@ The Azure Pricing MCP Server provides comprehensive Azure pricing intelligence t
 | 📊 **Real-time Data** | Live data from Azure Retail Prices API |
 | 🏷️ **Customer Discounts** | Apply discount percentages to all pricing queries |
 | ⚡ **PTU Sizing** | Estimate Provisioned Throughput Units for Azure OpenAI deployments |
+| 🌐 **Network Cost Planner** | Estimate bandwidth (tiered egress), NAT Gateway, Private Link, and more with Consumption-only pricing |
 | 🧱 **Databricks DBU Pricing** | Search DBU rates, estimate costs, compare workloads across regions |
 | 🐙 **GitHub Pricing** | Full GitHub pricing catalog + cost estimation (Plans, Copilot, Actions, Security, Codespaces) |
 
@@ -164,6 +165,41 @@ PTU sizing calculations are purely offline. Optional cost lookup uses the public
 "Estimate PTUs for gpt-5 with 50 RPM, 1000 prompt tokens, 500 completion tokens, using DataZoneProvisioned"
 "Size a gpt-4.1-mini deployment for 200 RPM with 300 input, 100 output tokens, and 150 cached tokens"
 "Estimate PTU cost for o4-mini in westeurope with 100 RPM"
+```
+
+---
+
+## Network Cost Planner
+
+Estimate the monthly and annual cost of an Azure networking topology with the
+`azure_network_cost_estimate` tool — no authentication required (uses the public Azure Retail
+Prices API).
+
+### Capabilities
+
+| Feature | Description |
+|---------|-------------|
+| **Tiered bandwidth pricing** | Internet / data egress priced with graduated tiers using `tierMinimumUnits`, with a full per-tier breakdown |
+| **NAT Gateway** | Hourly gateway-hours + data processed, with regional → Global fallback |
+| **Confident matching** | Public IP, Load Balancer, Private Link, and Application Gateway are priced only when a single unambiguous Consumption meter matches |
+| **Nothing hidden** | Components that can't be confidently priced are surfaced as *unpriced* with a reason — never silently dropped |
+| **Consumption-only** | Reservation rows are never treated as hourly prices |
+| **Global pricing flagged** | Any result that relies on the `Global` region fallback is clearly marked |
+| **Optional discount** | `discount_percentage` applied to the priced subtotal (not applied by default) |
+
+### Correctness Guarantees
+
+- `priceType="Reservation"` rows are never used as hourly Consumption prices.
+- Regional lookups fall back to `armRegionName="Global"` only when no regional Consumption meter
+  exists, and the result is marked as globally priced.
+- Tiered pricing is computed from `tierMinimumUnits` brackets.
+
+### Example Usage
+
+```
+"Estimate egress cost for 20 TB/month leaving East US to the internet"
+"What's the monthly cost of a NAT Gateway in westeurope processing 5 TB?"
+"Plan network costs from eastus to westus for 10 TB cross-region with a NAT Gateway"
 ```
 
 ---

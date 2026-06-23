@@ -24,13 +24,15 @@ from .formatters import (
     format_spot_price_history_response,
 )
 from .github_pricing.handlers import GitHubPricingHandlers
+from .network.handlers import NetworkHandlers
 from .services import DatabricksService, PricingService, PTUService, SKUService, SpotService
+from .services.network_cost import NetworkCostService
 from .services.orphaned import OrphanedResourcesService
 
 logger = logging.getLogger(__name__)
 
 
-class ToolHandlers(DatabricksHandlers, GitHubPricingHandlers):
+class ToolHandlers(DatabricksHandlers, GitHubPricingHandlers, NetworkHandlers):
     """Handlers for MCP tool calls."""
 
     def __init__(
@@ -40,12 +42,14 @@ class ToolHandlers(DatabricksHandlers, GitHubPricingHandlers):
         spot_service: SpotService | None = None,
         orphaned_service: OrphanedResourcesService | None = None,
         databricks_service: DatabricksService | None = None,
+        network_service: NetworkCostService | None = None,
     ) -> None:
         self._pricing_service = pricing_service
         self._sku_service = sku_service
         self._spot_service = spot_service
         self._orphaned_service = orphaned_service
         self._databricks_service = databricks_service
+        self._network_service = network_service
         self._ptu_service: PTUService | None = None
         self._github_pricing_service = None
 
@@ -248,6 +252,3 @@ class ToolHandlers(DatabricksHandlers, GitHubPricingHandlers):
         )
         response_text = format_ptu_sizing_response(result)
         return [TextContent(type="text", text=response_text)]
-
-
-

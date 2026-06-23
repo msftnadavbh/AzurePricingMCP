@@ -1,6 +1,6 @@
 # Available Tools
 
-The Azure Pricing MCP Server provides 18 tools for querying Azure, Databricks, and GitHub pricing.
+The Azure Pricing MCP Server provides 19 tools for querying Azure, Databricks, and GitHub pricing.
 
 ---
 
@@ -66,12 +66,41 @@ No authentication required for sizing. Cost lookup uses the public Azure Retail 
 | `rpm` | integer | Yes | Requests per minute |
 | `avg_input_tokens` | integer | Yes | Average input tokens per request |
 | `avg_output_tokens` | integer | Yes | Average output tokens per request |
-| `avg_cached_tokens` | integer | No | Average cached tokens per request (default: 0) |
+| `cached_tokens_per_request` | integer | No | Average cached tokens per request, deducted 100% from utilization (default: 0) |
 | `deployment_type` | string | No | `GlobalProvisioned`, `DataZoneProvisioned`, or `RegionalProvisioned` |
 | `include_cost` | boolean | No | Fetch live $/PTU/hr pricing (default: false) |
 | `region` | string | No | Azure region for cost lookup (default: eastus) |
 
 > 📖 **Need help finding your RPM and token counts?** See [PTU Sizing → Getting Your Input Data](USAGE_EXAMPLES.md#getting-your-input-data) for Azure CLI commands, KQL queries, and estimation tables.
+
+---
+
+## Network Cost Planner
+
+No authentication required. Real-time pricing from the public Azure Retail Prices API.
+
+| Tool | Description |
+|------|-------------|
+| `azure_network_cost_estimate` | Estimate monthly + annual cost of an Azure networking topology: bandwidth / data egress (tiered), NAT Gateway, Public IP, Load Balancer, Private Link, and Application Gateway |
+
+Only pay-as-you-go **Consumption** meters are used — `Reservation` rows are never treated as hourly prices. Bandwidth is priced with graduated tiers (`tierMinimumUnits`). Regional meters fall back to `Global` pricing only when necessary and the result is clearly marked. Components that cannot be matched to a single unambiguous meter are listed as **unpriced** rather than guessed.
+
+### Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `source_region` | string | Yes | Source Azure region (e.g., `eastus`, `westeurope`) |
+| `destination_region` | string | No | Destination region (used for cross-region transfers) |
+| `destination_type` | string | No | One of `internet`, `same_region`, `cross_region`, `intercontinental`, `private_link`, `expressroute` (default: `internet`) |
+| `monthly_data_gb` | number | No | Monthly outbound data volume in GB (default: 0) |
+| `gateway_hours` | number | No | Monthly runtime hours for hourly resources like NAT Gateway (default: 730) |
+| `include_nat_gateway` | boolean | No | Include NAT Gateway hourly + data-processed charges (default: false) |
+| `include_public_ip` | boolean | No | Include a Standard Public IP charge when confidently matched (default: false) |
+| `include_load_balancer` | boolean | No | Include a Load Balancer charge when confidently matched (default: false) |
+| `include_private_link` | boolean | No | Include Private Link endpoint + data-processed charges when confidently matched (default: false) |
+| `include_application_gateway` | boolean | No | Include an Application Gateway charge when confidently matched (default: false) |
+| `currency_code` | string | No | Currency code (default: `USD`) |
+| `discount_percentage` | number | No | Discount applied to the priced subtotal. Not applied by default. |
 
 ---
 
@@ -167,6 +196,7 @@ Once configured, ask your AI assistant:
 | **Spot Eviction** | "What are the eviction rates for D4s_v4 in eastus?" |
 | **Orphaned Resources** | "Find orphaned resources across all my subscriptions" |
 | **PTU Sizing** | "How many PTUs do I need for gpt-4.1 at 100 RPM with 500 input and 200 output tokens?" |
+| **Network Cost** | "Estimate egress cost for 20 TB/month leaving East US to the internet" |
 | **Databricks** | "What are the Databricks DBU rates for jobs workload in Premium tier?" |
 | **GitHub Pricing** | "What are the GitHub Copilot plan prices?" |
 | **GitHub Cost** | "Estimate monthly GitHub cost for 50 users on Team plan with Copilot Business" |
