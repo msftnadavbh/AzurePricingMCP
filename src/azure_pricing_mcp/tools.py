@@ -4,6 +4,7 @@ from mcp.types import Tool
 
 from .databricks.tools import get_databricks_tool_definitions
 from .github_pricing.tools import get_github_pricing_tool_definitions
+from .network.tools import get_network_tool_definitions
 
 
 def get_tool_definitions() -> list[Tool]:
@@ -434,4 +435,5 @@ def get_tool_definitions() -> list[Tool]:
         ]
         + get_databricks_tool_definitions()
         + get_github_pricing_tool_definitions()
+        + get_network_tool_definitions()
     )

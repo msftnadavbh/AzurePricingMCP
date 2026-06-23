@@ -5,6 +5,7 @@ from typing import Any
 
 from ..client import AzurePricingClient
 from ..config import DEFAULT_CUSTOMER_DISCOUNT
+from .meter_normalizer import is_consumption, select_consumption_meter
 from .retirement import RetirementService
 
 logger = logging.getLogger(__name__)
@@ -337,7 +338,16 @@ class PricingService:
         region_data: dict[str, dict[str, Any]] = {}
         spot_data: dict[str, dict[str, Any]] = {}
 
+        # Region recommendations compare on-demand prices, so only Consumption
+        # meters are eligible. Reservation rows carry term totals (not hourly
+        # rates) and would corrupt the "cheapest region" ranking if included.
+        skipped_non_consumption = 0
+
         for item in discovery_result["items"]:
+            if not is_consumption(item):
+                skipped_non_consumption += 1
+                continue
+
             region = item.get("armRegionName")
             price = item.get("retailPrice", 0)
             location = item.get("location", region)
@@ -413,7 +423,11 @@ class PricingService:
             "total_regions_found": len(recommendations),
             "showing_top": min(top_n, len(recommendations)),
             "recommendations": top_recommendations,
+            "price_type_filter": "Consumption",
         }
+
+        if skipped_non_consumption:
+            result["excluded_non_consumption_rows"] = skipped_non_consumption
 
         if recommendations:
             result["summary"] = {
@@ -449,7 +463,7 @@ class PricingService:
             sku_name=sku_name,
             region=region,
             currency_code=currency_code,
-            limit=5,
+            limit=20,
         )
 
         if not result["items"]:
@@ -460,7 +474,25 @@ class PricingService:
                 "region": region,
             }
 
-        item = result["items"][0]
+        # Select a valid pay-as-you-go Consumption meter rather than blindly
+        # taking the first row. The first row may be a Reservation (its
+        # retailPrice is a term total, not an hourly rate) which would produce a
+        # wildly wrong monthly estimate.
+        selected = select_consumption_meter(result["items"], sku_name=sku_name)
+        if selected is None:
+            return {
+                "error": (
+                    f"No Consumption (pay-as-you-go) meter found for {sku_name} in {region}. "
+                    "Only Reservation or Dev/Test rows were returned; use azure_ri_pricing for "
+                    "reservation pricing."
+                ),
+                "service_name": service_name,
+                "sku_name": sku_name,
+                "region": region,
+                "rows_returned": len(result["items"]),
+            }
+
+        item = selected.raw
         hourly_rate = item.get("retailPrice", 0)
         original_hourly_rate = hourly_rate
 

@@ -19,7 +19,13 @@ from mcp.types import TextContent, Tool
 
 from .client import AzurePricingClient
 from .handlers import ToolHandlers
-from .services import DatabricksService, PricingService, RetirementService, SKUService
+from .services import (
+    DatabricksService,
+    NetworkCostService,
+    PricingService,
+    RetirementService,
+    SKUService,
+)
 from .tools import get_tool_definitions
 
 # Configure logging
@@ -45,6 +51,7 @@ class AzurePricingServer:
         self._pricing_service: PricingService | None = None
         self._sku_service: SKUService | None = None
         self._databricks_service: DatabricksService | None = None
+        self._network_service: NetworkCostService | None = None
         self._tool_handlers: ToolHandlers | None = None
         self._session_active = False
 
@@ -67,6 +74,12 @@ class AzurePricingServer:
         if self._databricks_service is None:
             self._databricks_service = DatabricksService(self._client)
         return self._databricks_service
+
+    def _get_network_service(self) -> NetworkCostService:
+        """Get or lazily create the NetworkCostService."""
+        if self._network_service is None:
+            self._network_service = NetworkCostService(self._client)
+        return self._network_service
 
     async def __aenter__(self) -> "AzurePricingServer":
         """Async context manager entry - initializes the HTTP session."""
@@ -113,6 +126,7 @@ class AzurePricingServer:
                 self._get_pricing_service(),
                 self._get_sku_service(),
                 databricks_service=self._get_databricks_service(),
+                network_service=self._get_network_service(),
             )
         return self._tool_handlers
 
@@ -137,6 +151,7 @@ _TOOL_DISPATCH: dict[str, str] = {
     "azure_ptu_sizing": "handle_ptu_sizing",
     "github_pricing": "handle_github_pricing",
     "github_cost_estimate": "handle_github_cost_estimate",
+    "azure_network_cost_estimate": "handle_network_cost_estimate",
 }
 
 

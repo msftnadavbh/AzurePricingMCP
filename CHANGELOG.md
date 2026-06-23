@@ -5,6 +5,49 @@ All notable changes to the Azure Pricing MCP Server will be documented in this f
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.1.0] - 2026-06-23
+
+### Added
+
+- **Azure Network Cost Planner** — new `azure_network_cost_estimate` tool
+  - Estimates monthly + annualized cost of an Azure networking topology: bandwidth / data
+    egress, NAT Gateway, Public IP, Load Balancer, Private Link, and Application Gateway
+  - Bandwidth / internet egress is priced with a graduated **tiered pricing engine** using
+    `tierMinimumUnits`, with a full per-tier breakdown
+  - NAT Gateway priced as hourly gateway-hours + data processed, with **regional → Global
+    fallback** that clearly marks globally priced results
+  - Public IP, Load Balancer, Private Link, and Application Gateway are priced only when a
+    single, unambiguous Consumption meter is matched; otherwise they are surfaced under
+    **unpriced components** rather than guessed
+  - Markdown output includes assumptions, priced components, tiered breakdown, unpriced
+    components, total monthly cost, annualized cost, meters used, and warnings
+  - Optional `discount_percentage` (not applied by default)
+- **Shared pricing-correctness foundation** (`services/meter_normalizer.py`)
+  - Centralizes price-type handling (reads `type`, falls back to `priceType`), Consumption
+    filtering, Global detection, tier bounds, and a `select_consumption_meter` helper
+- **Tiered pricing engine** (`services/tiered_cost.py`) — graduated cost calculation from
+  `tierMinimumUnits` brackets, reusable across estimators
+- New test suites: `test_meter_normalizer.py`, `test_tiered_cost.py`, `test_network_cost.py`,
+  `test_pricing_correctness.py`
+
+### Fixed
+
+- **Consumption vs Reservation correctness** — `azure_cost_estimate` no longer takes the first
+  returned row blindly. It now selects a valid Consumption meter, so a `Reservation` row (whose
+  `retailPrice` is a term total, not an hourly rate) is never treated as hourly Consumption —
+  even when its `unitOfMeasure` is `1 Hour`. Returns a clear error if only Reservation/Dev-Test
+  rows exist.
+- **Region recommendations** — `azure_region_recommend` now filters to Consumption by default,
+  so Reservation rows can no longer corrupt the cheapest-region ranking. The excluded row count
+  is reported in the result.
+- **Global meters** — regional lookups fall back to `armRegionName="Global"` only when no
+  regional Consumption meter exists, and any result relying on the fallback is clearly marked as
+  globally priced.
+
+### Changed
+
+- Tool count increased from 18 to 19 across README and docs
+
 ## [4.0.0] - 2026-03-03
 
 ### Changed

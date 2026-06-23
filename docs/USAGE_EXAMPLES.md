@@ -25,6 +25,7 @@ Copy these queries directly or adapt them to your needs.
 - [Spot VM Tools](#spot-vm-tools)
 - [Orphaned Resource Detection](#orphaned-resource-detection)
 - [PTU Sizing](#ptu-sizing)
+- [Network Cost Estimation](#network-cost-estimation)
 - [Databricks DBU Pricing](#databricks-dbu-pricing)
 - [GitHub Pricing](#github-pricing)
 
@@ -591,6 +592,111 @@ Uses `include_cost=true` to fetch live $/PTU/hr pricing.
 | **GlobalProvisioned** | Any Azure geography | Lowest minimums |
 | **DataZoneProvisioned** | Within data zone (EU, US) | Same as Global |
 | **RegionalProvisioned** | Single region | Higher minimums |
+
+---
+
+## Network Cost Estimation
+
+Estimate the monthly and annual cost of an Azure networking topology — bandwidth / egress,
+NAT Gateway, Public IP, Load Balancer, Private Link, and Application Gateway. Uses the
+`azure_network_cost_estimate` tool. No authentication required.
+
+### Example 1: Internet Egress with Tiered Pricing
+
+**Query:**
+```
+"Estimate egress cost for 20 TB/month leaving East US to the internet"
+```
+
+**Tool invoked:** `azure_network_cost_estimate`
+
+**Parameters:**
+```json
+{
+  "source_region": "eastus",
+  "destination_type": "internet",
+  "monthly_data_gb": 20480
+}
+```
+
+**Sample response (abridged):**
+```
+## Azure Network Cost Estimate
+
+**Source region:** eastus
+**Destination type:** internet
+**Currency:** USD
+
+### Assumptions
+- Source region: eastus
+- Destination type: internet
+- Monthly data transfer: 20480 GB
+- Prices are pay-as-you-go Consumption rates; Reservation rows are excluded.
+
+### Priced Components
+| Component | Detail | Qty | Unit | Monthly Cost |
+|-----------|--------|-----|------|--------------|
+| Bandwidth - internet egress | Graduated data-transfer-out pricing | 20480 | GB | USD 1,740.80 |
+
+### Tiered Breakdown
+**Bandwidth - internet egress** - 20480 GB
+
+| Tier (from units) | Up to | Units | Unit Price | Line Cost |
+|-------------------|-------|-------|------------|-----------|
+| 0 | 10240 | 10240 | USD 0.087500 | USD 896.00 |
+| 10240 | + | 10240 | USD 0.082500 | USD 844.80 |
+_Subtotal: USD 1,740.80_
+
+### Total
+- **Total monthly cost: USD 1,740.80**
+- **Annualized cost: USD 20,889.60**
+```
+
+### Example 2: NAT Gateway with Data Processing
+
+**Query:**
+```
+"What's the monthly cost of a NAT Gateway in westeurope processing 5 TB?"
+```
+
+**Parameters:**
+```json
+{
+  "source_region": "westeurope",
+  "include_nat_gateway": true,
+  "monthly_data_gb": 5120,
+  "gateway_hours": 730
+}
+```
+
+The NAT Gateway is priced as **gateway-hours + data processed**. If a regional Consumption
+meter is unavailable, the tool falls back to `Global` pricing and marks the result accordingly.
+
+### Example 3: Cross-Region Transfer
+
+**Query:**
+```
+"Plan network costs from eastus to westus for 10 TB cross-region"
+```
+
+**Parameters:**
+```json
+{
+  "source_region": "eastus",
+  "destination_region": "westus",
+  "destination_type": "cross_region",
+  "monthly_data_gb": 10240
+}
+```
+
+### Notes on Correctness
+
+- Only pay-as-you-go **Consumption** meters are used. A `Reservation` row is never treated as
+  an hourly price, even when its `unitOfMeasure` is `1 Hour`.
+- Components that can't be matched to a single unambiguous meter (e.g., an ambiguous Public IP
+  or Load Balancer meter) are listed under **Unpriced Components** with a reason, rather than
+  being guessed.
+- Any value that relies on `Global` pricing is clearly flagged in the response.
 
 ---
 
