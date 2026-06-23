@@ -160,9 +160,14 @@ def _register_tool_handlers(server: Server, pricing_server: AzurePricingServer) 
         try:
             handler = getattr(pricing_server.tool_handlers, handler_name)
             return await handler(arguments)
-        except Exception as e:
-            logger.error(f"Error handling tool call {name}: {e}")
-            return [TextContent(type="text", text=f"Error: {e}")]
+        except Exception:
+            logger.exception(f"Error handling tool call {name}")
+            return [
+                TextContent(
+                    type="text",
+                    text=f"Error: tool '{name}' failed. See server logs for details.",
+                )
+            ]
 
 
 @overload
@@ -201,7 +206,7 @@ def create_server(return_pricing_server: bool = True) -> Server | tuple[Server, 
     @server.list_tools()
     async def handle_list_tools() -> list[Tool]:
         """List available tools."""
-        return tool_definitions
+        return list(tool_definitions)
 
     _register_tool_handlers(server, pricing_server)
 
