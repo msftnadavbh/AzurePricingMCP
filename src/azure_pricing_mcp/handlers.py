@@ -248,6 +248,3 @@ class ToolHandlers(DatabricksHandlers, GitHubPricingHandlers):
         )
         response_text = format_ptu_sizing_response(result)
         return [TextContent(type="text", text=response_text)]
-
-
-
