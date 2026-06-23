@@ -619,31 +619,37 @@ NAT Gateway, Public IP, Load Balancer, Private Link, and Application Gateway. Us
 }
 ```
 
-**Sample response:**
+**Sample response (abridged):**
 ```
-# Azure Network Cost Estimate
+## Azure Network Cost Estimate
 
-**Route:** eastus → internet
+**Source region:** eastus
+**Destination type:** internet
 **Currency:** USD
 
-## Assumptions
-- 20,480 GB of outbound data per month
-- Bandwidth priced using graduated Consumption tiers
+### Assumptions
+- Source region: eastus
+- Destination type: internet
+- Monthly data transfer: 20480 GB
+- Prices are pay-as-you-go Consumption rates; Reservation rows are excluded.
 
-## Priced Components
-| Component | Monthly Cost |
-|-----------|-------------|
-| Inter-Region / Internet Egress | $1,740.80 |
+### Priced Components
+| Component | Detail | Qty | Unit | Monthly Cost |
+|-----------|--------|-----|------|--------------|
+| Bandwidth - internet egress | Graduated data-transfer-out pricing | 20480 | GB | USD 1,740.80 |
 
-## Tiered Breakdown
-| Tier (GB) | Units | Rate | Cost |
-|-----------|-------|------|------|
-| 0 – 10,240 | 10,240 | $0.0875 | $896.00 |
-| 10,240+ | 10,240 | $0.0825 | $844.80 |
+### Tiered Breakdown
+**Bandwidth - internet egress** - 20480 GB
 
-## Total
-- **Monthly cost:** $1,740.80
-- **Annualized cost:** $20,889.60
+| Tier (from units) | Up to | Units | Unit Price | Line Cost |
+|-------------------|-------|-------|------------|-----------|
+| 0 | 10240 | 10240 | USD 0.087500 | USD 896.00 |
+| 10240 | + | 10240 | USD 0.082500 | USD 844.80 |
+_Subtotal: USD 1,740.80_
+
+### Total
+- **Total monthly cost: USD 1,740.80**
+- **Annualized cost: USD 20,889.60**
 ```
 
 ### Example 2: NAT Gateway with Data Processing

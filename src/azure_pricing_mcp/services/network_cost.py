@@ -411,7 +411,7 @@ class NetworkCostService:
             priced=True,
             monthly_cost=monthly_cost,
             quantity=gateway_hours,
-            unit="hour",
+            unit="hours",
             detail=detail,
             meters=[self._meter_record(name, meter, used_global)],
             globally_priced=used_global,

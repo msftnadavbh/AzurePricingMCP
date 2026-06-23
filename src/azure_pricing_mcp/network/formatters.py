@@ -15,7 +15,7 @@ def _format_tier_bound(value: float | None) -> str:
 def format_network_cost_estimate_response(result: dict[str, Any]) -> str:
     """Format the network cost estimate result as Markdown."""
     if "error" in result:
-        return f"### Azure Network Cost Estimate\n\n**Error:** {result['error']}"
+        return f"## Azure Network Cost Estimate\n\n**Error:** {result['error']}"
 
     currency = result.get("currency", "USD")
     lines: list[str] = ["## Azure Network Cost Estimate", ""]

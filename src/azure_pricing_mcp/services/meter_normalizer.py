@@ -217,9 +217,12 @@ def select_consumption_meter(
     prefer, in order:
 
     1. an exact case-insensitive ``skuName`` match when ``sku_name`` is given,
-    2. hourly meters when ``require_hourly`` is set,
+    2. hourly meters over non-hourly ones,
     3. the base price tier (lowest ``tierMinimumUnits``),
     4. the lowest ``retailPrice`` as a final tie-breaker.
+
+    ``require_hourly`` is a separate eligibility filter, not a sort preference:
+    when set, non-hourly meters are excluded entirely before ranking.
 
     Args:
         items: Raw API items.
