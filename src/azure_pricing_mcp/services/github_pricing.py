@@ -12,6 +12,7 @@ response indicates when the table was last checked.
 from __future__ import annotations
 
 import logging
+import re
 from typing import Any
 
 from ..config import (
@@ -285,8 +286,20 @@ class GitHubPricingService:
 
     @staticmethod
     def _match_copilot_plan(name: str) -> str:
-        """Case-insensitive match to a Copilot plan key."""
-        normalised = name.strip().lower().replace("+", "+")
+        """Case-insensitive match to a Copilot plan key.
+
+        Normalises common variants of the "Pro+" plan ("Pro Plus", "pro plus",
+        "pro-plus", "pro_plus", "proplus", "pro +", etc.) so they resolve to
+        "Pro+" instead of falling into the fuzzy "Pro" branch and silently
+        under-billing by $19/user/month.
+
+        Strategy: collapse all separator characters (whitespace, hyphens,
+        underscores) first, then map the word "plus" to "+". Doing it in this
+        order means "Pro Plus", "pro-plus", "pro_plus", and "proplus" all
+        collapse to the canonical "pro+" before lookup.
+        """
+        normalised = re.sub(r"[-_\s]+", "", name.strip().lower())
+        normalised = normalised.replace("plus", "+")
         for key in GITHUB_COPILOT_PLANS:
             if key.lower() == normalised:
                 return key
