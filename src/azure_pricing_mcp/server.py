@@ -31,6 +31,7 @@ class AzurePricingServer:
     """Azure Pricing MCP Server - coordinates all services.
 
     This class manages the lifecycle of the HTTP client and all services.
+    Services are lazily initialized on first use to avoid unnecessary overhead.
     Use as an async context manager to ensure proper resource cleanup.
 
     Example:
@@ -40,16 +41,32 @@ class AzurePricingServer:
 
     def __init__(self) -> None:
         self._client = AzurePricingClient()
-        self._retirement_service = RetirementService(self._client)
-        self._pricing_service = PricingService(self._client, self._retirement_service)
-        self._sku_service = SKUService(self._pricing_service)
-        self._databricks_service = DatabricksService(self._client)
-        self._tool_handlers = ToolHandlers(
-            self._pricing_service,
-            self._sku_service,
-            databricks_service=self._databricks_service,
-        )
+        self._retirement_service: RetirementService | None = None
+        self._pricing_service: PricingService | None = None
+        self._sku_service: SKUService | None = None
+        self._databricks_service: DatabricksService | None = None
+        self._tool_handlers: ToolHandlers | None = None
         self._session_active = False
+
+    def _get_pricing_service(self) -> PricingService:
+        """Get or lazily create the PricingService."""
+        if self._pricing_service is None:
+            if self._retirement_service is None:
+                self._retirement_service = RetirementService(self._client)
+            self._pricing_service = PricingService(self._client, self._retirement_service)
+        return self._pricing_service
+
+    def _get_sku_service(self) -> SKUService:
+        """Get or lazily create the SKUService."""
+        if self._sku_service is None:
+            self._sku_service = SKUService(self._get_pricing_service())
+        return self._sku_service
+
+    def _get_databricks_service(self) -> DatabricksService:
+        """Get or lazily create the DatabricksService."""
+        if self._databricks_service is None:
+            self._databricks_service = DatabricksService(self._client)
+        return self._databricks_service
 
     async def __aenter__(self) -> "AzurePricingServer":
         """Async context manager entry - initializes the HTTP session."""
@@ -90,8 +107,37 @@ class AzurePricingServer:
 
     @property
     def tool_handlers(self) -> ToolHandlers:
-        """Get the tool handlers instance."""
+        """Get or lazily create the tool handlers instance."""
+        if self._tool_handlers is None:
+            self._tool_handlers = ToolHandlers(
+                self._get_pricing_service(),
+                self._get_sku_service(),
+                databricks_service=self._get_databricks_service(),
+            )
         return self._tool_handlers
+
+
+# Tool name -> handler method name mapping (single source of truth for dispatch)
+_TOOL_DISPATCH: dict[str, str] = {
+    "azure_price_search": "handle_price_search",
+    "azure_price_compare": "handle_price_compare",
+    "azure_cost_estimate": "handle_cost_estimate",
+    "azure_discover_skus": "handle_discover_skus",
+    "azure_sku_discovery": "handle_sku_discovery",
+    "azure_region_recommend": "handle_region_recommend",
+    "azure_ri_pricing": "handle_ri_pricing",
+    "get_customer_discount": "handle_customer_discount",
+    "spot_eviction_rates": "handle_spot_eviction_rates",
+    "spot_price_history": "handle_spot_price_history",
+    "simulate_eviction": "handle_simulate_eviction",
+    "find_orphaned_resources": "handle_find_orphaned_resources",
+    "databricks_dbu_pricing": "handle_databricks_dbu_pricing",
+    "databricks_cost_estimate": "handle_databricks_cost_estimate",
+    "databricks_compare_workloads": "handle_databricks_compare_workloads",
+    "azure_ptu_sizing": "handle_ptu_sizing",
+    "github_pricing": "handle_github_pricing",
+    "github_cost_estimate": "handle_github_cost_estimate",
+}
 
 
 def _register_tool_handlers(server: Server, pricing_server: AzurePricingServer) -> None:
@@ -107,46 +153,21 @@ def _register_tool_handlers(server: Server, pricing_server: AzurePricingServer) 
         if not pricing_server.is_active:
             return [TextContent(type="text", text="Error: Server session not initialized")]
 
-        handlers = pricing_server.tool_handlers
-
-        if name == "azure_price_search":
-            return await handlers.handle_price_search(arguments)
-        elif name == "azure_price_compare":
-            return await handlers.handle_price_compare(arguments)
-        elif name == "azure_cost_estimate":
-            return await handlers.handle_cost_estimate(arguments)
-        elif name == "azure_discover_skus":
-            return await handlers.handle_discover_skus(arguments)
-        elif name == "azure_sku_discovery":
-            return await handlers.handle_sku_discovery(arguments)
-        elif name == "azure_region_recommend":
-            return await handlers.handle_region_recommend(arguments)
-        elif name == "azure_ri_pricing":
-            return await handlers.handle_ri_pricing(arguments)
-        elif name == "get_customer_discount":
-            return await handlers.handle_customer_discount(arguments)
-        elif name == "spot_eviction_rates":
-            return await handlers.handle_spot_eviction_rates(arguments)
-        elif name == "spot_price_history":
-            return await handlers.handle_spot_price_history(arguments)
-        elif name == "simulate_eviction":
-            return await handlers.handle_simulate_eviction(arguments)
-        elif name == "find_orphaned_resources":
-            return await handlers.handle_find_orphaned_resources(arguments)
-        elif name == "databricks_dbu_pricing":
-            return await handlers.handle_databricks_dbu_pricing(arguments)
-        elif name == "databricks_cost_estimate":
-            return await handlers.handle_databricks_cost_estimate(arguments)
-        elif name == "databricks_compare_workloads":
-            return await handlers.handle_databricks_compare_workloads(arguments)
-        elif name == "azure_ptu_sizing":
-            return await handlers.handle_ptu_sizing(arguments)
-        elif name == "github_pricing":
-            return await handlers.handle_github_pricing(arguments)
-        elif name == "github_cost_estimate":
-            return await handlers.handle_github_cost_estimate(arguments)
-        else:
+        handler_name = _TOOL_DISPATCH.get(name)
+        if handler_name is None:
             return [TextContent(type="text", text=f"Unknown tool: {name}")]
+
+        try:
+            handler = getattr(pricing_server.tool_handlers, handler_name)
+            return await handler(arguments)
+        except Exception:
+            logger.exception(f"Error handling tool call {name}")
+            return [
+                TextContent(
+                    type="text",
+                    text=f"Error: tool '{name}' failed. See server logs for details.",
+                )
+            ]
 
 
 @overload
@@ -180,10 +201,12 @@ def create_server(return_pricing_server: bool = True) -> Server | tuple[Server, 
     server = Server("azure-pricing")
     pricing_server = AzurePricingServer()
 
+    tool_definitions = get_tool_definitions()
+
     @server.list_tools()
     async def handle_list_tools() -> list[Tool]:
         """List available tools."""
-        return get_tool_definitions()
+        return list(tool_definitions)
 
     _register_tool_handlers(server, pricing_server)
 
